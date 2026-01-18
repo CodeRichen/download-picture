@@ -1,0 +1,53 @@
+Pixiv 下載器參數一覽
+
+必填/可選參數：
+1) 日期（YYYYMMDD）
+   範例：node index.js 20260117
+
+2) 月份（YYYYMM）
+   會把整個月份的每日排行榜下載到同一資料夾
+   範例：node index.js --month=202601
+
+可搭配的條件參數：
+--max=數量
+  限制最多下載的作品數量（在所有頁合併後裁切）
+  範例：--max=120
+
+--pages=頁數
+  下載排行榜頁數（每頁約 50 張）
+  範例：--pages=3
+
+--mode=模式
+  daily   ：每日排行榜（一般最常用）
+  weekly  ：每週排行榜
+  monthly ：每月排行榜
+  rookie  ：新人排行榜
+  範例：--mode=weekly
+
+--content=內容
+  illust ：插畫（靜態圖）
+  manga  ：漫畫（多頁靜態圖）
+  ugoira ：動圖（Pixiv 動畫）
+  all    ：全部內容
+  範例：--content=all
+
+--orientation=方向
+  landscape ：橫向（寬 > 高）
+  portrait  ：直向（高 > 寬）
+  square    ：正方形（寬 = 高）
+  any       ：不限制方向
+  範例：--orientation=landscape
+
+--type=類型
+  illust ：插畫（單張或多張靜態圖）
+  manga  ：漫畫（多頁靜態圖）
+  ugoira ：動圖（需要額外處理，這版會抓原圖連結）
+  all    ：不限制類型
+  範例：--type=illust
+
+--interval=毫秒
+  月份下載時每一天的間隔時間（避免過快請求）
+  範例：--interval=1500
+
+組合範例：
+node index.js --month=202601 --pages=3 --max=120 --orientation=landscape --type=illust
