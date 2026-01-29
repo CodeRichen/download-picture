@@ -146,12 +146,16 @@ function startWithCookie(cookie) {
 fs.exists("cookie/pixiv.txt", function(exists) {
     if (exists) {
         //var cookie = fs.readFileSync("cookie/pixiv.txt", "utf-8");
-        fs.readFile("cookie/pixiv.txt", "utf-8", function(err, res) {
-            cookie = res;
-            startWithCookie(cookie);
-
-            daily_rank();
-        });
+      fs.readFile("cookie/pixiv.txt", "utf-8", function(err, res) {
+    if (err) {
+        console.error("讀取檔案失敗:", err);
+        return;
+    }
+    // 使用 .trim() 刪除字串前後所有的空格與換行
+    cookie = res.trim(); 
+    console.log("讀取到的 Cookie 長度:", cookie.length); // 檢查長度是否符合預期
+    startWithCookie(cookie);
+});
     } else {
         console.log("Cookie file not found. Please log in first.");
         login(function(newCookie) {
