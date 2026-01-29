@@ -29,7 +29,8 @@ var options = {
     content: "illust",
     pages: 1,
     baseDir: null,
-    interval: 1000
+    interval: 1000,
+    tag: null
 };
 
 var monthArg = null;
@@ -61,6 +62,10 @@ args.forEach(function(arg) {
     if (arg.indexOf("--interval=") === 0) {
         var itv = parseInt(arg.split("=")[1], 10);
         options.interval = isNaN(itv) || itv < 0 ? 1000 : itv;
+    }
+    if (arg.indexOf("--tag=") === 0) {
+        options.tag = arg.split("=")[1]; // 例如 --tag=miku
+        console.log("設定篩選標籤為:", options.tag);
     }
 });
 
