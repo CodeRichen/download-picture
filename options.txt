@@ -51,3 +51,4 @@ Pixiv 下載器參數一覽
 
 組合範例：
 node index.js --month=202601 --pages=3 --max=120 --orientation=landscape --type=illust
+node topic/download-picture/index.js --month=202501 --tag=miku --orientation=landscape --type=illust
