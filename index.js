@@ -142,82 +142,42 @@ function startWithCookie(cookie) {
     });
 }
 
-//set cookie and save it.when some page need cookie,use it.
-fs.exists("cookie/pixiv.txt", function(exists) {
-    if (exists) {
-        //var cookie = fs.readFileSync("cookie/pixiv.txt", "utf-8");
-      fs.readFile("cookie/pixiv.txt", "utf-8", function(err, res) {
-    if (err) {
-        console.error("讀取檔案失敗:", err);
-        return;
-    }
-    // 使用 .trim() 刪除字串前後所有的空格與換行
-    cookie = res.trim(); 
-    console.log("讀取到的 Cookie 長度:", cookie.length); // 檢查長度是否符合預期
-    startWithCookie(cookie);
-});
-    } else {
-        console.log("Cookie file not found. Please log in first.");
-        login(function(newCookie) {
-            cookie = newCookie;
-            if (cookie) {
-                console.log("cookie已建立，再次运行开始正常操作XD");
-                startWithCookie(cookie);
-            } else {
-                console.log("登录失败，请检查账号密码或网络");
-            }
-        });
-    }
-})
+// 讀取並轉換 Cookie 的函式
+function loadAndConvertCookie(filePath) {
+    try {
+        let rawContent = fs.readFileSync(filePath, "utf-8").trim();
+        let finalCookie = "";
 
-//get daily rank
-function daily_rank() {
-    https.get("https://www.pixiv.net/ranking.php?mode=daily&content=illust", function(res) {
-        var html = "";
-        res.on("data", function(chunk) {
-            html += chunk;
-        });
-        res.on("end", function(res) {
-            var $ = io.load(html);
-            var content = $("section h2 a");
-            getImgUrl($, content);
-        })
-    })
+        // 判斷是否為 JSON 格式 (以 [ 開頭通常是導出的 JSON 陣列)
+        if (rawContent.startsWith("[")) {
+            console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
+            let cookieArray = JSON.parse(rawContent);
+            
+            // 將陣列轉換為 key=value; key=value 的格式
+            finalCookie = cookieArray
+                .map(item => `${item.name}=${item.value}`)
+                .join("; ");
+        } else {
+            // 如果是普通字串，直接去處換行即可
+            finalCookie = rawContent.replace(/[\r\n]/g, "");
+        }
+
+        return finalCookie;
+    } catch (err) {
+        console.error("讀取或解析 Cookie 檔案失敗:", err.message);
+        return null;
+    }
 }
 
-//
-function getImgUrl($, content) {
+//set cookie and save it.when some page need cookie,use it.
 
-    var img_url = {};
-    var jar = request.jar();
-    jar.setCookie(cookie, "https://www.pixiv.net/");
-    content.each(function(index, title) {
-        img_url[index] = title.attribs.href.match(/illust_id.[0-9]*/g);
-        request({
-            url: "https://www.pixiv.net/member_illust.php?mode=medium&" + img_url[index],
-            headers: {
-                'Referer': "https://www.pixiv.net",
-                'User-Agent': "Mozilla/5.0 (Windows NT 6.3; rv:27.0) Gecko/20100101 Firefox/27.0",
-            },
-            jar: jar
-        }, function(err, res, body) {
-            fs.writeFile("./log/pixiv_" + index + ".html", body, "utf-8", function() {});
-        });
-
-        // https.get("https://www.pixiv.net/member_illust.php?mode=medium&" + img_url[index], function(res) {
-        //     let _html = "";
-
-        //     res.on("data", function(chunk) {
-        //         _html += chunk;
-        //     });
-        //     res.on("end", function() {
-        //         let $ = io.load(_html);
-        //         let imgUrl = $(".img-container img").attr("src");
-        //         let name = $(".img-container img").attr("src").match(/[0-9]*_[a-z][0-9]*/g);
-        //         img_url[index] = imgHead + imgUrl.match(/\/img\/[0-9]*\/[0-9]*\/[0-9]*\/[0-9]*\/[0-9]*\/[0-9]*\/[0-9]*_[a-z][0-9]*/g) + ".png";
-        //         console.log(img_url[index]);
-        //         //save(img_url[index], name);
-        //     })
-        // })
-    });
+let cookiePath = "cookie/pixiv.txt";
+if (fs.existsSync(cookiePath)) {
+    let convertedCookie = loadAndConvertCookie(cookiePath);
+    if (convertedCookie) {
+        console.log("Cookie 轉換成功！長度:", convertedCookie.length);
+        // 這裡接你原本的 startWithCookie(convertedCookie)
+        cookie = convertedCookie;
+        startWithCookie(cookie);
+    }
 }
