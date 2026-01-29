@@ -142,30 +142,42 @@ function startWithCookie(cookie) {
     });
 }
 
+// 讀取並轉換 Cookie 的函式
+function loadAndConvertCookie(filePath) {
+    try {
+        let rawContent = fs.readFileSync(filePath, "utf-8").trim();
+        let finalCookie = "";
+
+        // 判斷是否為 JSON 格式 (以 [ 開頭通常是導出的 JSON 陣列)
+        if (rawContent.startsWith("[")) {
+            console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
+            let cookieArray = JSON.parse(rawContent);
+            
+            // 將陣列轉換為 key=value; key=value 的格式
+            finalCookie = cookieArray
+                .map(item => `${item.name}=${item.value}`)
+                .join("; ");
+        } else {
+            // 如果是普通字串，直接去處換行即可
+            finalCookie = rawContent.replace(/[\r\n]/g, "");
+        }
+
+        return finalCookie;
+    } catch (err) {
+        console.error("讀取或解析 Cookie 檔案失敗:", err.message);
+        return null;
+    }
+}
+
 //set cookie and save it.when some page need cookie,use it.
-fs.exists("cookie/pixiv.txt", function(exists) {
-    if (exists) {
-        //var cookie = fs.readFileSync("cookie/pixiv.txt", "utf-8");
-      fs.readFile("cookie/pixiv.txt", "utf-8", function(err, res) {
-    if (err) {
-        console.error("讀取檔案失敗:", err);
-        return;
+
+let cookiePath = "cookie/pixiv.txt";
+if (fs.existsSync(cookiePath)) {
+    let convertedCookie = loadAndConvertCookie(cookiePath);
+    if (convertedCookie) {
+        console.log("Cookie 轉換成功！長度:", convertedCookie.length);
+        // 這裡接你原本的 startWithCookie(convertedCookie)
+        cookie = convertedCookie;
+        startWithCookie(cookie);
     }
-    // 使用 .trim() 刪除字串前後所有的空格與換行
-    cookie = res.trim(); 
-    console.log("讀取到的 Cookie 長度:", cookie.length); // 檢查長度是否符合預期
-    startWithCookie(cookie);
-});
-    } else {
-        console.log("Cookie file not found. Please log in first.");
-        login(function(newCookie) {
-            cookie = newCookie;
-            if (cookie) {
-                console.log("cookie已建立，再次运行开始正常操作XD");
-                startWithCookie(cookie);
-            } else {
-                console.log("登录失败，请检查账号密码或网络");
-            }
-        });
-    }
-})
+}
