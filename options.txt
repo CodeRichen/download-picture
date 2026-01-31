@@ -33,6 +33,7 @@ Pixiv 下載器參數一覽
 
 --orientation=方向
   landscape ：橫向（寬 > 高）
+  desktop   ：電腦螢幕比例
   portrait  ：直向（高 > 寬）
   square    ：正方形（寬 = 高）
   any       ：不限制方向
@@ -52,4 +53,5 @@ Pixiv 下載器參數一覽
 組合範例：
 cd topic/download-picture/
 node index.js --month=202503  --pages=10 --tag=初音 --orientation=landscape 
-node index.js 20250301  --pages=10 --tag=初音 --orientation=landscape 
+node index.js --month=202503  --pages=10 --tag=初音 --orientation=desktop  --content=illust
+node index.js 20250301  --pages=10 --tag=初音 
