@@ -13,7 +13,7 @@ var pixiv_url = "https://www.pixiv.net/";
 var cookie;
 
 var args = process.argv.slice(2);
-var _date = args.find(function(a) { return /^\d{8}$/.test(a); }); //自定义时间 20170101,长度为8
+var _date = args.find(function(a) { return /^\d{8}$/.test(a); });
 var today = new Date();
 today.setTime(today - 24 * 60 * 60 * 1000);
 var day = JSON.stringify(today.getDate()).length < 2 ? "0" + today.getDate() : today.getDate();
@@ -30,7 +30,9 @@ var options = {
     pages: 1,
     baseDir: null,
     interval: 1000,
-    tag: null
+    tag: null,
+    block: null,  // 屏蔽標籤
+    tool: false   // 新增：是否記錄標籤到 txt 檔案
 };
 
 var monthArg = null;
@@ -64,8 +66,18 @@ args.forEach(function(arg) {
         options.interval = isNaN(itv) || itv < 0 ? 1000 : itv;
     }
     if (arg.indexOf("--tag=") === 0) {
-        options.tag = arg.split("=")[1]; // 例如 --tag=miku
+        options.tag = arg.split("=")[1];
         console.log("設定篩選標籤為:", options.tag);
+    }
+    // 新增：解析 --block 參數
+    if (arg.indexOf("--block=") === 0) {
+        options.block = arg.split("=")[1];
+        console.log("設定屏蔽標籤為:", options.block);
+    }
+    // 新增：解析 --tool 參數
+    if (arg === "--tool") {
+        options.tool = true;
+        console.log("已啟用標籤記錄功能");
     }
 });
 
@@ -123,8 +135,7 @@ function startWithCookie(cookie) {
         console.log("输入的日期格式不正确");
     }
 
-
-    //test cookie 
+    // test cookie 
     var jar = request.jar();
     jar.setCookie(cookie, pixiv_url);
     request({
@@ -142,23 +153,19 @@ function startWithCookie(cookie) {
     });
 }
 
-// 讀取並轉換 Cookie 的函式
 function loadAndConvertCookie(filePath) {
     try {
         let rawContent = fs.readFileSync(filePath, "utf-8").trim();
         let finalCookie = "";
 
-        // 判斷是否為 JSON 格式 (以 [ 開頭通常是導出的 JSON 陣列)
         if (rawContent.startsWith("[")) {
             console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
             let cookieArray = JSON.parse(rawContent);
             
-            // 將陣列轉換為 key=value; key=value 的格式
             finalCookie = cookieArray
                 .map(item => `${item.name}=${item.value}`)
                 .join("; ");
         } else {
-            // 如果是普通字串，直接去處換行即可
             finalCookie = rawContent.replace(/[\r\n]/g, "");
         }
 
@@ -169,14 +176,11 @@ function loadAndConvertCookie(filePath) {
     }
 }
 
-//set cookie and save it.when some page need cookie,use it.
-
 let cookiePath = "cookie/pixiv.txt";
 if (fs.existsSync(cookiePath)) {
     let convertedCookie = loadAndConvertCookie(cookiePath);
     if (convertedCookie) {
         console.log("Cookie 轉換成功！長度:", convertedCookie.length);
-        // 這裡接你原本的 startWithCookie(convertedCookie)
         cookie = convertedCookie;
         startWithCookie(cookie);
     }
