@@ -53,5 +53,4 @@ Pixiv 下載器參數一覽
 組合範例：
 cd topic/download-picture/
 node index.js --month=202503  --pages=10 --tag=初音 --orientation=landscape 
-node index.js --month=202503  --pages=10 --tag=初音 --orientation=desktop  --content=illust
-node index.js 20250301  --pages=10 --tag=初音 
+node index.js --month=202503  --pages=10 --tag=初音ミク,miku --block=むちむち,縞ビキニ,みっぱい --orientation=landscape 
