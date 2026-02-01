@@ -31,7 +31,8 @@ var options = {
     baseDir: null,
     interval: 1000,
     tag: null,
-    block: null,      // 屏蔽標籤
+    block: null,      // 屏蔽標籤（智能匹配）
+    nowordBlock: null, // --noword 後的屏蔽標籤（強制部分匹配）
     tool: false,      // 是否記錄標籤到 txt 檔案
     one: false,       // 禁止多圖作品（--one）
     downloadAll: false // 下載多圖的所有圖片
@@ -72,13 +73,33 @@ args.forEach(function(arg) {
         options.interval = isNaN(itv) || itv < 0 ? 1000 : itv;
     }
     if (arg.indexOf("--tag=") === 0) {
-        options.tag = arg.split("=")[1];
-        console.log("設定篩選標籤為:", options.tag);
+        var newTag = arg.split("=")[1].replace(/\s/g, "");
+        if (options.tag) {
+            options.tag += "," + newTag; // 累加，不覆蓋
+        } else {
+            options.tag = newTag;
+        }
+        console.log("新增篩選標籤:", newTag);
     }
-    // 新增：解析 --block 參數
+    // 新增：解析 --block 參數（去除所有空格，支持多次使用）
     if (arg.indexOf("--block=") === 0) {
-        options.block = arg.split("=")[1];
-        console.log("設定屏蔽標籤為:", options.block);
+        var newBlock = arg.split("=")[1].replace(/\s/g, "");
+        if (options.block) {
+            options.block += "," + newBlock; // 累加，不覆蓋
+        } else {
+            options.block = newBlock;
+        }
+        console.log("新增屏蔽標籤:", newBlock);
+    }
+    // 新增：解析 --noword 參數（強制部分匹配，支持多次使用）
+    if (arg.indexOf("--noword=") === 0) {
+        var newNoword = arg.split("=")[1].replace(/\s/g, "");
+        if (options.nowordBlock) {
+            options.nowordBlock += "," + newNoword; // 累加，不覆蓋
+        } else {
+            options.nowordBlock = newNoword;
+        }
+        console.log("新增強制部分匹配屏蔽標籤:", newNoword);
     }
     // 新增：解析 --tool 參數
     if (arg === "--tool") {
@@ -96,6 +117,32 @@ args.forEach(function(arg) {
         console.log("已啟用多圖完整下載模式");
     }
 });
+
+// 顯示篩選標籤彙總
+if (options.tag) {
+    var tagCount = options.tag.split(",").length;
+    console.log(`\n篩選標籤 (--tag): ${tagCount} 個`);
+    console.log(`  ${options.tag}\n`);
+}
+
+// 顯示最終的屏蔽標籤彙總
+if (options.block || options.nowordBlock) {
+    console.log("=== 屏蔽標籤彙總 ===");
+    if (options.block) {
+        var blockCount = options.block.split(",").length;
+        console.log(`--block (智能匹配): ${blockCount} 個標籤`);
+        console.log(`  ${options.block}`);
+    }
+    if (options.nowordBlock) {
+        var nowordCount = options.nowordBlock.split(",").length;
+        console.log(`--noword (強制部分匹配): ${nowordCount} 個標籤`);
+        console.log(`  ${options.nowordBlock}`);
+    }
+    var totalCount = (options.block ? options.block.split(",").length : 0) + 
+                     (options.nowordBlock ? options.nowordBlock.split(",").length : 0);
+    console.log(`總計: ${totalCount} 個屏蔽標籤`);
+    console.log("==================\n");
+}
 
 function getDatesInMonth(ym) {
     if (!/^\d{6}$/.test(ym)) {

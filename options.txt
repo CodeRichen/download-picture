@@ -52,7 +52,8 @@ Pixiv 下載器參數一覽
 
 組合範例：
 cd topic/download-picture/
-node index.js --month=202503  --pages=10 --one  `
+node index.js --month=202503  --pages=10 --one --tool `
 --tag=初音ミク,miku,VOCALOID,ボカロ,鏡音 `
---block=むちむち,縞ビキニ,みっぱい,爆乳,supersatanson,はいてな,腹肉, ぽっちゃり, bbw, SSBBW, 肥満化,腹ワイパー,thicc,褐色 `
---noword 尻,初音ニク,ai
+--block=パンチラ,縞パン,ぱんつ,diaper,Abdl,高達,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー,魅惑の谷間,極上の乳  `
+--block=むちむち,縞ビキニ,みっぱい,爆乳,supersatanson,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc,褐色,巨乳  `
+--noword=尻,初音ニク,ai 
