@@ -31,11 +31,14 @@ var options = {
     baseDir: null,
     interval: 1000,
     tag: null,
-    block: null,  // 屏蔽標籤
-    tool: false   // 新增：是否記錄標籤到 txt 檔案
+    block: null,      // 屏蔽標籤
+    tool: false,      // 是否記錄標籤到 txt 檔案
+    one: false,       // 禁止多圖作品（--one）
+    downloadAll: false // 下載多圖的所有圖片
 };
 
 var monthArg = null;
+var yearArg = null;
 
 args.forEach(function(arg) {
     if (arg.indexOf("--max=") === 0) {
@@ -61,6 +64,9 @@ args.forEach(function(arg) {
     if (arg.indexOf("--month=") === 0) {
         monthArg = arg.split("=")[1];
     }
+    if (arg.indexOf("--year=") === 0) {
+        yearArg = arg.split("=")[1];
+    }
     if (arg.indexOf("--interval=") === 0) {
         var itv = parseInt(arg.split("=")[1], 10);
         options.interval = isNaN(itv) || itv < 0 ? 1000 : itv;
@@ -78,6 +84,16 @@ args.forEach(function(arg) {
     if (arg === "--tool") {
         options.tool = true;
         console.log("已啟用標籤記錄功能");
+    }
+    // 新增：解析 --one 參數
+    if (arg === "--one") {
+        options.one = true;
+        console.log("已啟用單圖模式（禁止多圖作品）");
+    }
+    // 新增：解析 --all 參數（下載多圖的所有圖片）
+    if (arg === "--all") {
+        options.downloadAll = true;
+        console.log("已啟用多圖完整下載模式");
     }
 });
 
@@ -98,6 +114,27 @@ function getDatesInMonth(ym) {
     return dates;
 }
 
+function getDatesInYear(y) {
+    if (!/^\d{4}$/.test(y)) {
+        return [];
+    }
+    var year = parseInt(y, 10);
+    var dates = [];
+    
+    // 遍歷 12 個月
+    for (var month = 0; month < 12; month++) {
+        var d = new Date(year, month, 1);
+        while (d.getMonth() === month) {
+            var day = String(d.getDate()).padStart(2, "0");
+            var monthStr = String(d.getMonth() + 1).padStart(2, "0");
+            dates.push(String(d.getFullYear()) + monthStr + day);
+            d.setDate(d.getDate() + 1);
+        }
+    }
+    
+    return dates;
+}
+
 function startWithCookie(cookie) {
     console.log("Cookie loaded: " + cookie + "\n");
 
@@ -110,18 +147,63 @@ function startWithCookie(cookie) {
         fs.mkdirSync("./picture");
     }
 
+    // 處理 --year 參數
+    if (yearArg) {
+        var yearDates = getDatesInYear(yearArg);
+        if (yearDates.length === 0) {
+            console.log("输入的年份格式不正确，格式为 YYYY");
+            return;
+        }
+        
+        console.log("=== 年份下載信息 ===");
+        console.log("指定年份:", yearArg);
+        console.log("生成日期:", yearDates.length, "天");
+        console.log("第一天:", yearDates[0]);
+        console.log("最後一天:", yearDates[yearDates.length - 1]);
+        console.log("==================\n");
+        
+        options.baseDir = "./picture/" + yearArg;
+        var i = 0;
+        (function runNext() {
+            if (i >= yearDates.length) {
+                console.log("\n=== 年份下載完成 ===");
+                console.log("共處理:", yearDates.length, "天");
+                console.log("=====================");
+                return;
+            }
+            console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
+            daily_rank(cookie, yearDates[i], options);
+            i++;
+            setTimeout(runNext, options.interval);
+        })();
+        return;
+    }
+
     if (monthArg) {
         var monthDates = getDatesInMonth(monthArg);
         if (monthDates.length === 0) {
             console.log("输入的月份格式不正确，格式为 YYYYMM");
             return;
         }
+        
+        // 顯示調試信息
+        console.log("=== 月份下載信息 ===");
+        console.log("指定月份:", monthArg);
+        console.log("生成日期:", monthDates.length, "天");
+        console.log("第一天:", monthDates[0]);
+        console.log("最後一天:", monthDates[monthDates.length - 1]);
+        console.log("==================\n");
+        
         options.baseDir = "./picture/" + monthArg;
         var i = 0;
         (function runNext() {
             if (i >= monthDates.length) {
+                console.log("\n=== 月份下載完成 ===");
+                console.log("共處理:", monthDates.length, "天");
+                console.log("=====================");
                 return;
             }
+            console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
             daily_rank(cookie, monthDates[i], options);
             i++;
             setTimeout(runNext, options.interval);
