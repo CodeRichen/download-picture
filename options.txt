@@ -52,5 +52,7 @@ Pixiv 下載器參數一覽
 
 組合範例：
 cd topic/download-picture/
-node index.js --month=202503  --pages=10 --tag=初音 --orientation=landscape 
-node index.js --month=202503  --pages=10 --tag=初音ミク,miku --block=むちむち,縞ビキニ,みっぱい --orientation=landscape 
+node index.js --month=202503  --pages=10 --one  `
+--tag=初音ミク,miku,VOCALOID,ボカロ,鏡音 `
+--block=むちむち,縞ビキニ,みっぱい,爆乳,supersatanson,はいてな,腹肉, ぽっちゃり, bbw, SSBBW, 肥満化,腹ワイパー,thicc,褐色 `
+--noword 尻,初音ニク,ai
