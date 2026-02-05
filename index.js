@@ -209,17 +209,26 @@ function startWithCookie(cookie) {
         console.log("最後一天:", yearDates[yearDates.length - 1]);
         console.log("==================\n");
         
+        // 加載共享緩存
+        console.log("[緩存] 加載共享緩存...");
+        var sharedCache = daily_rank.loadCache();
+        console.log("[緩存] 共享緩存加載完成\n");
+        
         options.baseDir = "./picture/" + yearArg;
         var i = 0;
         (function runNext() {
             if (i >= yearDates.length) {
+                console.log("\n[緩存] 保存年份緩存數據...");
+                daily_rank.saveCache(sharedCache);
+                console.log("[緩存] 年份緩存保存完成 ✓");
+                
                 console.log("\n=== 年份下載完成 ===");
                 console.log("共處理:", yearDates.length, "天");
                 console.log("=====================");
                 return;
             }
             console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
-            daily_rank(cookie, yearDates[i], options);
+            daily_rank(cookie, yearDates[i], options, sharedCache);
             i++;
             setTimeout(runNext, options.interval);
         })();
@@ -241,17 +250,23 @@ function startWithCookie(cookie) {
         console.log("最後一天:", monthDates[monthDates.length - 1]);
         console.log("==================\n");
         
+        // 加載共享緩存
+        console.log("[緩存] 加載共享緩存...");
+        var sharedCache = daily_rank.loadCache();
+        console.log("[緩存] 共享緩存加載完成\n");
+        
         options.baseDir = "./picture/" + monthArg;
         var i = 0;
         (function runNext() {
             if (i >= monthDates.length) {
+
                 console.log("\n=== 月份下載完成 ===");
                 console.log("共處理:", monthDates.length, "天");
                 console.log("=====================");
                 return;
             }
             console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
-            daily_rank(cookie, monthDates[i], options);
+            daily_rank(cookie, monthDates[i], options, sharedCache);
             i++;
             setTimeout(runNext, options.interval);
         })();

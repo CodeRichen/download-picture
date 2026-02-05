@@ -50,10 +50,13 @@ Pixiv 下載器參數一覽
   月份下載時每一天的間隔時間（避免過快請求）
   範例：--interval=1500
 
+每50請求休息10秒: over 1024
+
 組合範例：
 cd topic/download-picture/
-node index.js --month=202503  --pages=10 --one --tool `
---tag=初音ミク,miku,VOCALOID,ボカロ,鏡音 `
---block=パンチラ,縞パン,ぱんつ,diaper,Abdl,高達,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー,魅惑の谷間,極上の乳  `
---block=むちむち,縞ビキニ,みっぱい,爆乳,supersatanson,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc,褐色,巨乳  `
+node index.js --month=202503  --pages=10 --all --tool `
+--tag=初音ミク,miku,VOCALOID,ボカロ,鏡音リン `
+--block=supersatanson,Abdl,高達,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー,結月ゆかりV6のインナー  `
+--block=diaper,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc, `
+--block=極上の乳,爆乳,巨乳,みっぱい,魅惑の谷間,褐色むちむち,パンチラ,縞パン,ぱんつ,縞ビキニ `
 --noword=尻,初音ニク,ai 
