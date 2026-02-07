@@ -50,13 +50,18 @@ Pixiv 下載器參數一覽
   月份下載時每一天的間隔時間（避免過快請求）
   範例：--interval=1500
 
-每50請求休息10秒: over 1024
+--noword (強制部分匹配屏蔽 / 嚴格排除)
+  只要作品標籤中包含這個字眼（即便只是標籤的一部分），就直接砍掉。
+
+目前機制: 每50請求(或去json算一次請求，下載算5次請求)休息10秒，達成1000次請求休息時間增加0.3秒
 
 組合範例：
 cd topic/download-picture/
-node index.js --month=202503  --pages=10 --all --tool `
+node index.js --year=20250920  --pages=10 --all --tool --orientation=nomanga `
 --tag=初音ミク,miku,VOCALOID,ボカロ,鏡音リン `
---block=supersatanson,Abdl,高達,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー,結月ゆかりV6のインナー  `
---block=diaper,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc, `
---block=極上の乳,爆乳,巨乳,みっぱい,魅惑の谷間,褐色むちむち,パンチラ,縞パン,ぱんつ,縞ビキニ `
---noword=尻,初音ニク,ai 
+--block=supersatanson,Abdl,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー `
+--block=シテヤンヨ,結月ゆかりV6のインナー,KBTIT,ボカロふかせ,中野一花,中野三玖,nakanomiku,五等分の花嫁,艦これ,日暮里日記シリーズ `
+--block=diaper,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc,異形進化,髪行類,多脚ヤンヨ,ショタ,たくしあげ,お腹,へそ,腹筋,おへそ,おちんちん `
+--block=極上の乳,爆乳,巨乳,淫乳,みっぱい,おっぱい,魅惑の谷間,褐色むちむち,パンチラ,縞パン,ぱんつ,縞ビキニ,泥酔,お品書き,その後の続きを全裸待機,露出,女装,メスガキ, オスガキ `
+--noword=尻,初音ニク,ai,鋼音ミク,Fukase,ふかせ,三玖,亜種,ゲルググ,ガンダム,高達,北斗,ラオウ,孫悟空,ゴジラエヴォルヴ,男の娘
+--block-group=[鏡音レン, マイクロビキニ]

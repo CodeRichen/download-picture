@@ -35,7 +35,8 @@ var options = {
     nowordBlock: null, // --noword 後的屏蔽標籤（強制部分匹配）
     tool: false,      // 是否記錄標籤到 txt 檔案
     one: false,       // 禁止多圖作品（--one）
-    downloadAll: false // 下載多圖的所有圖片
+    downloadAll: false, // 下載多圖的所有圖片
+
 };
 
 var monthArg = null;
@@ -79,7 +80,6 @@ args.forEach(function(arg) {
         } else {
             options.tag = newTag;
         }
-        console.log("新增篩選標籤:", newTag);
     }
     // 新增：解析 --block 參數（去除所有空格，支持多次使用）
     if (arg.indexOf("--block=") === 0) {
@@ -89,7 +89,7 @@ args.forEach(function(arg) {
         } else {
             options.block = newBlock;
         }
-        console.log("新增屏蔽標籤:", newBlock);
+
     }
     // 新增：解析 --noword 參數（強制部分匹配，支持多次使用）
     if (arg.indexOf("--noword=") === 0) {
@@ -99,8 +99,20 @@ args.forEach(function(arg) {
         } else {
             options.nowordBlock = newNoword;
         }
-        console.log("新增強制部分匹配屏蔽標籤:", newNoword);
+
     }
+
+if (arg.indexOf("--block-group=") === 0) {
+
+    var groupStr = arg.split("=")[1].replace(/[\[\]]/g, "");
+    var groupArray = groupStr.split(",").map(tag => tag.trim().toLowerCase()).filter(t => t);
+    
+    if (!options.blockGroups) {
+        options.blockGroups = [];
+    }
+    options.blockGroups.push(groupArray); // 存入二維陣列
+}
+
     // 新增：解析 --tool 參數
     if (arg === "--tool") {
         options.tool = true;
@@ -116,6 +128,7 @@ args.forEach(function(arg) {
         options.downloadAll = true;
         console.log("已啟用多圖完整下載模式");
     }
+
 });
 
 // 顯示篩選標籤彙總
@@ -201,33 +214,25 @@ function startWithCookie(cookie) {
             console.log("输入的年份格式不正确，格式为 YYYY");
             return;
         }
-        
-        console.log("=== 年份下載信息 ===");
-        console.log("指定年份:", yearArg);
-        console.log("生成日期:", yearDates.length, "天");
-        console.log("第一天:", yearDates[0]);
-        console.log("最後一天:", yearDates[yearDates.length - 1]);
-        console.log("==================\n");
+    
         
         // 加載共享緩存
         console.log("[緩存] 加載共享緩存...");
         var sharedCache = daily_rank.loadCache();
-        console.log("[緩存] 共享緩存加載完成\n");
+
         
         options.baseDir = "./picture/" + yearArg;
         var i = 0;
         (function runNext() {
             if (i >= yearDates.length) {
-                console.log("\n[緩存] 保存年份緩存數據...");
+
                 daily_rank.saveCache(sharedCache);
-                console.log("[緩存] 年份緩存保存完成 ✓");
                 
-                console.log("\n=== 年份下載完成 ===");
-                console.log("共處理:", yearDates.length, "天");
-                console.log("=====================");
+                console.log("\n=== 年份迴圈完成 ===");
+
                 return;
             }
-            console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
+            // console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
             daily_rank(cookie, yearDates[i], options, sharedCache);
             i++;
             setTimeout(runNext, options.interval);
@@ -241,14 +246,7 @@ function startWithCookie(cookie) {
             console.log("输入的月份格式不正确，格式为 YYYYMM");
             return;
         }
-        
-        // 顯示調試信息
-        console.log("=== 月份下載信息 ===");
-        console.log("指定月份:", monthArg);
-        console.log("生成日期:", monthDates.length, "天");
-        console.log("第一天:", monthDates[0]);
-        console.log("最後一天:", monthDates[monthDates.length - 1]);
-        console.log("==================\n");
+
         
         // 加載共享緩存
         console.log("[緩存] 加載共享緩存...");
@@ -260,12 +258,10 @@ function startWithCookie(cookie) {
         (function runNext() {
             if (i >= monthDates.length) {
 
-                console.log("\n=== 月份下載完成 ===");
-                console.log("共處理:", monthDates.length, "天");
-                console.log("=====================");
+                console.log("\n=== 月份迴圈完成 ===");
                 return;
             }
-            console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
+            // console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
             daily_rank(cookie, monthDates[i], options, sharedCache);
             i++;
             setTimeout(runNext, options.interval);
