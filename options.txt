@@ -57,11 +57,11 @@ Pixiv 下載器參數一覽
 
 組合範例：
 cd topic/download-picture/
-node index.js --year=20250920  --pages=10 --all --tool --orientation=nomanga `
+node index.js 20250113  --pages=10 --all --tool --orientation=nomanga `
 --tag=初音ミク,miku,VOCALOID,ボカロ,鏡音リン `
 --block=supersatanson,Abdl,夏亞專用機,Among Us,AMOGUS,結月ゆかりV6のインナー `
 --block=シテヤンヨ,結月ゆかりV6のインナー,KBTIT,ボカロふかせ,中野一花,中野三玖,nakanomiku,五等分の花嫁,艦これ,日暮里日記シリーズ `
 --block=diaper,はいてな,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc,異形進化,髪行類,多脚ヤンヨ,ショタ,たくしあげ,お腹,へそ,腹筋,おへそ,おちんちん `
 --block=極上の乳,爆乳,巨乳,淫乳,みっぱい,おっぱい,魅惑の谷間,褐色むちむち,パンチラ,縞パン,ぱんつ,縞ビキニ,泥酔,お品書き,その後の続きを全裸待機,露出,女装,メスガキ, オスガキ `
---noword=尻,初音ニク,ai,鋼音ミク,Fukase,ふかせ,三玖,亜種,ゲルググ,ガンダム,高達,北斗,ラオウ,孫悟空,ゴジラエヴォルヴ,男の娘
+--noword=尻,初音ニク,ai,鋼音ミク,Fukase,ふかせ,三玖,亜種,ゲルググ,ガンダム,高達,北斗,ラオウ,孫悟空,ゴジラエヴォルヴ,男の娘 `
 --block-group=[鏡音レン, マイクロビキニ]
