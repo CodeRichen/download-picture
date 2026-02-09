@@ -101,32 +101,51 @@ args.forEach(function(arg) {
         }
 
     }
-
 if (arg.indexOf("--block-group=") === 0) {
+    // 1. 取得原始字串並去掉引號
+    var rawGroups = arg.split("=")[1].replace(/\"/g, "");
 
-    var groupStr = arg.split("=")[1].replace(/[\[\]]/g, "");
-    var groupArray = groupStr.split(",").map(tag => tag.trim().toLowerCase()).filter(t => t);
-    
-    if (!options.blockGroups) {
-        options.blockGroups = [];
+    // 2. 先處理特殊格式 [ A, B ) -> 條件屏蔽
+    // 使用正則匹配 [ ... )，避免受到 [ ... ] 的干擾
+    var condMatches = rawGroups.match(/\[[^\]]*\)/g);
+    if (condMatches) {
+        if (!options.conditionalBlocks) options.conditionalBlocks = [];
+        condMatches.forEach(m => {
+            var tags = m.replace(/[\[\)]/g, "").split(",").map(t => t.trim()).filter(t => t);
+            if (tags.length >= 2) {
+                options.conditionalBlocks.push({
+                    ifExists: tags[0],
+                    mustHave: tags[1]
+                });
+            }
+        });
     }
-    options.blockGroups.push(groupArray); // 存入二維陣列
+
+    // 3. 再處理普通格式 [ A, B ] -> 群組屏蔽
+    var normalMatches = rawGroups.match(/\[[^\]]*\]/g);
+    if (normalMatches) {
+        if (!options.blockGroups) options.blockGroups = [];
+        normalMatches.forEach(m => {
+            var tags = m.replace(/[\[\]]/g, "").split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+            options.blockGroups.push(tags);
+        });
+    }
 }
 
     // 新增：解析 --tool 參數
     if (arg === "--tool") {
         options.tool = true;
-        console.log("已啟用標籤記錄功能");
+        // console.log("已啟用標籤記錄功能");
     }
     // 新增：解析 --one 參數
     if (arg === "--one") {
         options.one = true;
-        console.log("已啟用單圖模式（禁止多圖作品）");
+        // console.log("已啟用單圖模式（禁止多圖作品）");
     }
     // 新增：解析 --all 參數（下載多圖的所有圖片）
     if (arg === "--all") {
         options.downloadAll = true;
-        console.log("已啟用多圖完整下載模式");
+        // console.log("已啟用多圖完整下載模式");
     }
 
 });
@@ -134,27 +153,38 @@ if (arg.indexOf("--block-group=") === 0) {
 // 顯示篩選標籤彙總
 if (options.tag) {
     var tagCount = options.tag.split(",").length;
-    console.log(`\n篩選標籤 (--tag): ${tagCount} 個`);
-    console.log(`  ${options.tag}\n`);
+    console.log(`--tag: ${tagCount} `);
+    console.log(`  ${options.tag}`);
 }
 
-// 顯示最終的屏蔽標籤彙總
+
 if (options.block || options.nowordBlock) {
-    console.log("=== 屏蔽標籤彙總 ===");
+
     if (options.block) {
         var blockCount = options.block.split(",").length;
-        console.log(`--block (智能匹配): ${blockCount} 個標籤`);
+        console.log(`--block: ${blockCount}`);
         console.log(`  ${options.block}`);
     }
     if (options.nowordBlock) {
         var nowordCount = options.nowordBlock.split(",").length;
-        console.log(`--noword (強制部分匹配): ${nowordCount} 個標籤`);
+        console.log(`--noword: ${nowordCount} `);
         console.log(`  ${options.nowordBlock}`);
     }
-    var totalCount = (options.block ? options.block.split(",").length : 0) + 
-                     (options.nowordBlock ? options.nowordBlock.split(",").length : 0);
-    console.log(`總計: ${totalCount} 個屏蔽標籤`);
-    console.log("==================\n");
+if (options.blockGroups && options.blockGroups.length > 0) {
+    console.log(`--block-group (AND Block): ${options.blockGroups.length}`);
+    options.blockGroups.forEach((g, index) => {
+        // 在每組之間加上空格
+        process.stdout.write(`[${g.join(" & ")}] `);
+    });
+    console.log(); 
+}
+
+if (options.conditionalBlocks && options.conditionalBlocks.length > 0) {
+    console.log(`--conditional-blocks (If A then B): ${options.conditionalBlocks.length}`);
+    options.conditionalBlocks.forEach(r => {
+        console.log(`  若作品有 [${r.ifExists}] 則必須包含 [${r.mustHave}]`);
+    });
+}
 }
 
 function getDatesInMonth(ym) {
@@ -196,7 +226,7 @@ function getDatesInYear(y) {
 }
 
 function startWithCookie(cookie) {
-    console.log("Cookie loaded: " + cookie + "\n");
+    // console.log("Cookie loaded: " + cookie + "\n");
 
     if (cookie.indexOf("PHPSESSID") === -1) {
         console.log("警告：Cookie 可能未登入（缺少 PHPSESSID），若無法下載請改用瀏覽器 Cookie。");
@@ -207,6 +237,12 @@ function startWithCookie(cookie) {
         fs.mkdirSync("./picture");
     }
 
+    var tagPrefix = "";
+    if (options.tag) {
+        // 取得第一個標籤，並過濾掉資料夾不允許的特殊字元
+        var firstTag = options.tag.split(",")[0].replace(/[\\/:*?"<>|]/g, "_");
+        tagPrefix = firstTag + "_";
+    }
     // 處理 --year 參數
     if (yearArg) {
         var yearDates = getDatesInYear(yearArg);
@@ -217,18 +253,18 @@ function startWithCookie(cookie) {
     
         
         // 加載共享緩存
-        console.log("[緩存] 加載共享緩存...");
+
         var sharedCache = daily_rank.loadCache();
 
         
-        options.baseDir = "./picture/" + yearArg;
+        options.baseDir = "./picture/" + tagPrefix + yearArg;
         var i = 0;
         (function runNext() {
             if (i >= yearDates.length) {
 
                 daily_rank.saveCache(sharedCache);
                 
-                console.log("\n=== 年份迴圈完成 ===");
+                // console.log("cycle complete");
 
                 return;
             }
@@ -249,16 +285,16 @@ function startWithCookie(cookie) {
 
         
         // 加載共享緩存
-        console.log("[緩存] 加載共享緩存...");
+        // console.log("[緩存] 加載共享緩存...");
         var sharedCache = daily_rank.loadCache();
-        console.log("[緩存] 共享緩存加載完成\n");
+        // console.log("[緩存] 共享緩存加載完成\n");
         
-        options.baseDir = "./picture/" + monthArg;
+        options.baseDir = "./picture/" + tagPrefix + monthArg;
         var i = 0;
         (function runNext() {
             if (i >= monthDates.length) {
 
-                console.log("\n=== 月份迴圈完成 ===");
+                // console.log("cycle complete");
                 return;
             }
             // console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
@@ -299,7 +335,7 @@ function loadAndConvertCookie(filePath) {
         let finalCookie = "";
 
         if (rawContent.startsWith("[")) {
-            console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
+            // console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
             let cookieArray = JSON.parse(rawContent);
             
             finalCookie = cookieArray
@@ -320,7 +356,7 @@ let cookiePath = "cookie/pixiv.txt";
 if (fs.existsSync(cookiePath)) {
     let convertedCookie = loadAndConvertCookie(cookiePath);
     if (convertedCookie) {
-        console.log("Cookie 轉換成功！長度:", convertedCookie.length);
+        // console.log("Cookie 轉換成功！長度:", convertedCookie.length);
         cookie = convertedCookie;
         startWithCookie(cookie);
     }
