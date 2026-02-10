@@ -36,7 +36,6 @@ var options = {
     tool: false,      // 是否記錄標籤到 txt 檔案
     one: false,       // 禁止多圖作品（--one）
     downloadAll: false, // 下載多圖的所有圖片
-
 };
 
 var monthArg = null;
@@ -89,7 +88,6 @@ args.forEach(function(arg) {
         } else {
             options.block = newBlock;
         }
-
     }
     // 新增：解析 --noword 參數（強制部分匹配，支持多次使用）
     if (arg.indexOf("--noword=") === 0) {
@@ -99,38 +97,37 @@ args.forEach(function(arg) {
         } else {
             options.nowordBlock = newNoword;
         }
-
     }
-if (arg.indexOf("--block-group=") === 0) {
-    // 1. 取得原始字串並去掉引號
-    var rawGroups = arg.split("=")[1].replace(/\"/g, "");
+    if (arg.indexOf("--block-group=") === 0) {
+        // 1. 取得原始字串並去掉引號
+        var rawGroups = arg.split("=")[1].replace(/\"/g, "");
 
-    // 2. 先處理特殊格式 [ A, B ) -> 條件屏蔽
-    // 使用正則匹配 [ ... )，避免受到 [ ... ] 的干擾
-    var condMatches = rawGroups.match(/\[[^\]]*\)/g);
-    if (condMatches) {
-        if (!options.conditionalBlocks) options.conditionalBlocks = [];
-        condMatches.forEach(m => {
-            var tags = m.replace(/[\[\)]/g, "").split(",").map(t => t.trim()).filter(t => t);
-            if (tags.length >= 2) {
-                options.conditionalBlocks.push({
-                    ifExists: tags[0],
-                    mustHave: tags[1]
-                });
-            }
-        });
-    }
+        // 2. 先處理特殊格式 [ A, B ) -> 條件屏蔽
+        // 使用正則匹配 [ ... )，避免受到 [ ... ] 的干擾
+        var condMatches = rawGroups.match(/\[[^\]]*\)/g);
+        if (condMatches) {
+            if (!options.conditionalBlocks) options.conditionalBlocks = [];
+            condMatches.forEach(m => {
+                var tags = m.replace(/[\[\)]/g, "").split(",").map(t => t.trim()).filter(t => t);
+                if (tags.length >= 2) {
+                    options.conditionalBlocks.push({
+                        ifExists: tags[0],  // 保留原始大小寫
+                        mustHave: tags[1]   // 保留原始大小寫
+                    });
+                }
+            });
+        }
 
-    // 3. 再處理普通格式 [ A, B ] -> 群組屏蔽
-    var normalMatches = rawGroups.match(/\[[^\]]*\]/g);
-    if (normalMatches) {
-        if (!options.blockGroups) options.blockGroups = [];
-        normalMatches.forEach(m => {
-            var tags = m.replace(/[\[\]]/g, "").split(",").map(t => t.trim().toLowerCase()).filter(t => t);
-            options.blockGroups.push(tags);
-        });
+        // 3. 再處理普通格式 [ A, B ] -> 群組屏蔽
+        var normalMatches = rawGroups.match(/\[[^\]]*\]/g);
+        if (normalMatches) {
+            if (!options.blockGroups) options.blockGroups = [];
+            normalMatches.forEach(m => {
+                var tags = m.replace(/[\[\]]/g, "").split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+                options.blockGroups.push(tags);
+            });
+        }
     }
-}
 
     // 新增：解析 --tool 參數
     if (arg === "--tool") {
@@ -147,7 +144,6 @@ if (arg.indexOf("--block-group=") === 0) {
         options.downloadAll = true;
         // console.log("已啟用多圖完整下載模式");
     }
-
 });
 
 // 顯示篩選標籤彙總
@@ -157,9 +153,7 @@ if (options.tag) {
     console.log(`  ${options.tag}`);
 }
 
-
 if (options.block || options.nowordBlock) {
-
     if (options.block) {
         var blockCount = options.block.split(",").length;
         console.log(`--block: ${blockCount}`);
@@ -170,21 +164,21 @@ if (options.block || options.nowordBlock) {
         console.log(`--noword: ${nowordCount} `);
         console.log(`  ${options.nowordBlock}`);
     }
-if (options.blockGroups && options.blockGroups.length > 0) {
-    console.log(`--block-group (AND Block): ${options.blockGroups.length}`);
-    options.blockGroups.forEach((g, index) => {
-        // 在每組之間加上空格
-        process.stdout.write(`[${g.join(" & ")}] `);
-    });
-    console.log(); 
-}
+    if (options.blockGroups && options.blockGroups.length > 0) {
+        console.log(`--block-group (AND Block): ${options.blockGroups.length}`);
+        options.blockGroups.forEach((g, index) => {
+            // 在每組之間加上空格
+            process.stdout.write(`[${g.join(" & ")}] `);
+        });
+        console.log(); 
+    }
 
-if (options.conditionalBlocks && options.conditionalBlocks.length > 0) {
-    console.log(`--conditional-blocks (If A then B): ${options.conditionalBlocks.length}`);
-    options.conditionalBlocks.forEach(r => {
-        console.log(`  若作品有 [${r.ifExists}] 則必須包含 [${r.mustHave}]`);
-    });
-}
+    if (options.conditionalBlocks && options.conditionalBlocks.length > 0) {
+        console.log(`--conditional-blocks (If A then B): ${options.conditionalBlocks.length}`);
+        options.conditionalBlocks.forEach(r => {
+            console.log(`  若作品有 [${r.ifExists}] 則必須包含 [${r.mustHave}]`);
+        });
+    }
 }
 
 function getDatesInMonth(ym) {
@@ -243,6 +237,7 @@ function startWithCookie(cookie) {
         var firstTag = options.tag.split(",")[0].replace(/[\\/:*?"<>|]/g, "_");
         tagPrefix = firstTag + "_";
     }
+    
     // 處理 --year 參數
     if (yearArg) {
         var yearDates = getDatesInYear(yearArg);
@@ -250,26 +245,16 @@ function startWithCookie(cookie) {
             console.log("输入的年份格式不正确，格式为 YYYY");
             return;
         }
-    
-        
-        // 加載共享緩存
-
-        var sharedCache = daily_rank.loadCache();
-
         
         options.baseDir = "./picture/" + tagPrefix + yearArg;
         var i = 0;
         (function runNext() {
             if (i >= yearDates.length) {
-
-                daily_rank.saveCache(sharedCache);
-                
                 // console.log("cycle complete");
-
                 return;
             }
             // console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
-            daily_rank(cookie, yearDates[i], options, sharedCache);
+            daily_rank(cookie, yearDates[i], options);
             i++;
             setTimeout(runNext, options.interval);
         })();
@@ -282,23 +267,16 @@ function startWithCookie(cookie) {
             console.log("输入的月份格式不正确，格式为 YYYYMM");
             return;
         }
-
-        
-        // 加載共享緩存
-        // console.log("[緩存] 加載共享緩存...");
-        var sharedCache = daily_rank.loadCache();
-        // console.log("[緩存] 共享緩存加載完成\n");
         
         options.baseDir = "./picture/" + tagPrefix + monthArg;
         var i = 0;
         (function runNext() {
             if (i >= monthDates.length) {
-
                 // console.log("cycle complete");
                 return;
             }
             // console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
-            daily_rank(cookie, monthDates[i], options, sharedCache);
+            daily_rank(cookie, monthDates[i], options);
             i++;
             setTimeout(runNext, options.interval);
         })();
