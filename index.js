@@ -295,7 +295,9 @@ function startWithCookie(cookie) {
                 daily_rank(cookie, currentDate, dailyOptions, function(result) {
                     // result: { date, total, completed, failed }
                     dayIndex++;
-                    setTimeout(processNextDay, options.interval);
+                    // 如果沒有下載任何東西（全部跳過），立即處理下一天
+                    var delay = (result.total === 0) ? 10 : options.interval;
+                    setTimeout(processNextDay, delay);
                 });
             }
             
@@ -333,7 +335,9 @@ function startWithCookie(cookie) {
             // 使用完成回調，確保當天下載完成後才處理下一天
             daily_rank(cookie, currentDate, dailyOptions, function(result) {
                 i++;
-                setTimeout(runNext, options.interval);
+                // 如果沒有下載任何東西（全部跳過），立即處理下一天
+                var delay = (result.total === 0) ? 10 : options.interval;
+                setTimeout(runNext, delay);
             });
         })();
         return;
