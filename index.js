@@ -29,7 +29,7 @@ var options = {
     content: "illust",
     pages: 1,
     baseDir: null,
-    interval: 1000,
+    interval: 10,
     tag: null,
     block: null,      // 屏蔽標籤（智能匹配）
     nowordBlock: null, // --noword 後的屏蔽標籤（強制部分匹配）
@@ -264,13 +264,12 @@ function startWithCookie(cookie) {
             }
             
             var currentMonth = months[currentMonthIndex];
-            console.log(`\n=== 開始處理月份 ${currentMonth} (${currentMonthIndex + 1}/12) ===`);
             
             var monthDates = getDatesInMonth(currentMonth);
             if (monthDates.length === 0) {
                 console.log(`月份 ${currentMonth} 格式錯誤，跳過`);
                 currentMonthIndex++;
-                setTimeout(processNextMonth, 100);
+                setTimeout(processNextMonth, 10);
                 return;
             }
             
@@ -279,10 +278,8 @@ function startWithCookie(cookie) {
             
             function processNextDay() {
                 if (dayIndex >= monthDatesLength) {
-                    console.log(`月份 ${currentMonth} 處理完成\n`);
                     currentMonthIndex++;
-                    // 月份之間稍微延遲
-                    setTimeout(processNextMonth, 2000);
+                    setTimeout(processNextMonth, 10);
                     return;
                 }
                 
