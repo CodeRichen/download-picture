@@ -248,13 +248,22 @@ function startWithCookie(cookie) {
         
         options.baseDir = "./picture/" + tagPrefix + yearArg;
         var i = 0;
+        var yearDatesLength = yearDates.length; // 快取長度
+        
         (function runNext() {
-            if (i >= yearDates.length) {
+            if (i >= yearDatesLength) {
+                // 清理記憶體
+                yearDates = null;
                 // console.log("cycle complete");
                 return;
             }
-            // console.log(`\n--- 開始處理第 ${i + 1}/${yearDates.length} 天: ${yearDates[i]} ---`);
-            daily_rank(cookie, yearDates[i], options);
+            var currentDate = yearDates[i]; // 快取當前日期
+            // console.log(`\n--- 開始處理第 ${i + 1}/${yearDatesLength} 天: ${currentDate} ---`);
+            
+            // 為每個日期創建獨立的 options 副本，避免 pageMap 被覆蓋
+            var dailyOptions = Object.assign({}, options);
+            daily_rank(cookie, currentDate, dailyOptions);
+            
             i++;
             setTimeout(runNext, options.interval);
         })();
@@ -270,13 +279,22 @@ function startWithCookie(cookie) {
         
         options.baseDir = "./picture/" + tagPrefix + monthArg;
         var i = 0;
+        var monthDatesLength = monthDates.length; // 快取長度
+        
         (function runNext() {
-            if (i >= monthDates.length) {
+            if (i >= monthDatesLength) {
+                // 清理記憶體
+                monthDates = null;
                 // console.log("cycle complete");
                 return;
             }
-            // console.log(`\n--- 開始處理第 ${i + 1}/${monthDates.length} 天: ${monthDates[i]} ---`);
-            daily_rank(cookie, monthDates[i], options);
+            var currentDate = monthDates[i]; // 快取當前日期
+            // console.log(`\n--- 開始處理第 ${i + 1}/${monthDatesLength} 天: ${currentDate} ---`);
+            
+            // 為每個日期創建獨立的 options 副本，避免 pageMap 被覆蓋
+            var dailyOptions = Object.assign({}, options);
+            daily_rank(cookie, currentDate, dailyOptions);
+            
             i++;
             setTimeout(runNext, options.interval);
         })();
@@ -284,6 +302,8 @@ function startWithCookie(cookie) {
     }
 
     if (date.length == 8) {
+        // 設置單日下載的資料夾名稱：第一個tag_日期
+        options.baseDir = "./picture/" + tagPrefix + date;
         daily_rank(cookie, date, options);
     } else {
         console.log("输入的日期格式不正确");
@@ -310,20 +330,24 @@ function startWithCookie(cookie) {
 function loadAndConvertCookie(filePath) {
     try {
         let rawContent = fs.readFileSync(filePath, "utf-8").trim();
-        let finalCookie = "";
 
+        // 優化: 減少字串處理和臨時変數
         if (rawContent.startsWith("[")) {
             // console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
             let cookieArray = JSON.parse(rawContent);
+            rawContent = null; // 清理原始內容
             
-            finalCookie = cookieArray
+            let finalCookie = cookieArray
                 .map(item => `${item.name}=${item.value}`)
                 .join("; ");
+            
+            cookieArray = null; // 清理陣列
+            return finalCookie;
         } else {
-            finalCookie = rawContent.replace(/[\r\n]/g, "");
+            let finalCookie = rawContent.replace(/[\r\n]/g, "");
+            rawContent = null; // 清理原始內容
+            return finalCookie;
         }
-
-        return finalCookie;
     } catch (err) {
         console.error("讀取或解析 Cookie 檔案失敗:", err.message);
         return null;
