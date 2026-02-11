@@ -31,11 +31,11 @@ var options = {
     baseDir: null,
     interval: 10,
     tag: null,
-    block: null,      // 屏蔽標籤（智能匹配）
-    nowordBlock: null, // --noword 後的屏蔽標籤（強制部分匹配）
-    tool: false,      // 是否記錄標籤到 txt 檔案
-    one: false,       // 禁止多圖作品（--one）
-    downloadAll: false, // 下載多圖的所有圖片
+    block: null,
+    nowordBlock: null,
+    tool: false,
+    one: false,
+    downloadAll: false,
 };
 
 var monthArg = null;
@@ -75,74 +75,85 @@ args.forEach(function(arg) {
     if (arg.indexOf("--tag=") === 0) {
         var newTag = arg.split("=")[1].replace(/\s/g, "");
         if (options.tag) {
-            options.tag += "," + newTag; // 累加，不覆蓋
+            options.tag += "," + newTag;
         } else {
             options.tag = newTag;
         }
     }
-    // 新增：解析 --block 參數（去除所有空格，支持多次使用）
     if (arg.indexOf("--block=") === 0) {
         var newBlock = arg.split("=")[1].replace(/\s/g, "");
         if (options.block) {
-            options.block += "," + newBlock; // 累加，不覆蓋
+            options.block += "," + newBlock;
         } else {
             options.block = newBlock;
         }
     }
-    // 新增：解析 --noword 參數（強制部分匹配，支持多次使用）
     if (arg.indexOf("--noword=") === 0) {
         var newNoword = arg.split("=")[1].replace(/\s/g, "");
         if (options.nowordBlock) {
-            options.nowordBlock += "," + newNoword; // 累加，不覆蓋
+            options.nowordBlock += "," + newNoword;
         } else {
             options.nowordBlock = newNoword;
         }
     }
-    if (arg.indexOf("--block-group=") === 0) {
-        // 1. 取得原始字串並去掉引號
-        var rawGroups = arg.split("=")[1].replace(/\"/g, "");
+ if (arg.indexOf("--block-group=") === 0) {
 
-        // 2. 先處理特殊格式 [ A, B ) -> 條件屏蔽
-        // 使用正則匹配 [ ... )，避免受到 [ ... ] 的干擾
-        var condMatches = rawGroups.match(/\[[^\]]*\)/g);
-        if (condMatches) {
-            if (!options.conditionalBlocks) options.conditionalBlocks = [];
-            condMatches.forEach(m => {
-                var tags = m.replace(/[\[\)]/g, "").split(",").map(t => t.trim()).filter(t => t);
-                if (tags.length >= 2) {
-                    options.conditionalBlocks.push({
-                        ifExists: tags[0],  // 保留原始大小寫
-                        mustHave: tags[1]   // 保留原始大小寫
-                    });
-                }
-            });
-        }
+    // 取得原始字串並移除雙引號
+    var rawGroups = arg.split("=")[1].replace(/\"/g, "");
 
-        // 3. 再處理普通格式 [ A, B ] -> 群組屏蔽
-        var normalMatches = rawGroups.match(/\[[^\]]*\]/g);
-        if (normalMatches) {
-            if (!options.blockGroups) options.blockGroups = [];
-            normalMatches.forEach(m => {
-                var tags = m.replace(/[\[\]]/g, "").split(",").map(t => t.trim().toLowerCase()).filter(t => t);
-                options.blockGroups.push(tags);
-            });
-        }
+    // 抓出所有 [ ... ] 或 [ ... )
+    var allMatches = rawGroups.match(/\[[^\[\]]+?[\]\)]/g);
+
+    if (allMatches) {
+
+        allMatches.forEach(m => {
+
+            // 判斷是否為 conditional (結尾是 ')')
+            var isConditional = m.endsWith(")");
+
+            // 去掉外層括號
+            var inner = m.slice(1, -1);
+
+            // 分割 tag
+            var tags = inner
+                .split(",")
+                .map(t => t.trim())
+                .filter(t => t);
+
+            if (tags.length < 2) return;
+
+            if (isConditional) {
+                // ===== 條件式 If A then B =====
+                if (!options.conditionalBlocks)
+                    options.conditionalBlocks = [];
+
+                options.conditionalBlocks.push({
+                    ifExists: tags[0],   // 保留大小寫
+                    mustHave: tags[1]
+                });
+
+            } else {
+                // ===== 一般 AND block =====
+                if (!options.blockGroups)
+                    options.blockGroups = [];
+
+                options.blockGroups.push(
+                    tags.map(t => t.toLowerCase())
+                );
+            }
+
+        });
     }
+}
 
-    // 新增：解析 --tool 參數
     if (arg === "--tool") {
         options.tool = true;
-        // console.log("已啟用標籤記錄功能");
     }
-    // 新增：解析 --one 參數
     if (arg === "--one") {
         options.one = true;
-        // console.log("已啟用單圖模式（禁止多圖作品）");
     }
-    // 新增：解析 --all 參數（下載多圖的所有圖片）
     if (arg === "--all") {
         options.downloadAll = true;
-        // console.log("已啟用多圖完整下載模式");
     }
 });
 
@@ -167,7 +178,6 @@ if (options.block || options.nowordBlock) {
     if (options.blockGroups && options.blockGroups.length > 0) {
         console.log(`--block-group (AND Block): ${options.blockGroups.length}`);
         options.blockGroups.forEach((g, index) => {
-            // 在每組之間加上空格
             process.stdout.write(`[${g.join(" & ")}] `);
         });
         console.log(); 
@@ -205,7 +215,6 @@ function getDatesInYear(y) {
     var year = parseInt(y, 10);
     var dates = [];
     
-    // 遍歷 12 個月
     for (var month = 0; month < 12; month++) {
         var d = new Date(year, month, 1);
         while (d.getMonth() === month) {
@@ -219,9 +228,101 @@ function getDatesInYear(y) {
     return dates;
 }
 
-function startWithCookie(cookie) {
-    // console.log("Cookie loaded: " + cookie + "\n");
+/**
+ * 新增：月度批量處理函數
+ * 一次性請求整個月的所有 API，然後並行下載
+ */
+function processMonthBatch(cookie, monthDates, options, onMonthComplete) {
+    if (!monthDates || monthDates.length === 0) {
+        if (onMonthComplete) onMonthComplete({ total: 0, completed: 0, failed: 0 });
+        return;
+    }
+    
+    var monthStr = monthDates[0].substring(0, 6); // 例如: "202501"
 
+    
+    var completedDays = 0;
+    var totalMonthIllusts = 0;
+    var completedMonthIllusts = 0;
+    var failedMonthIllusts = 0;
+    
+    // 為每個日期創建獨立的 options
+    var dailyOptionsList = monthDates.map(function(date) {
+        return Object.assign({}, options);
+    });
+    
+    // 第1階段：批量請求所有日期的 API（不下載）
+    var dateIndex = 0;
+    function requestNextDay() {
+        if (dateIndex >= monthDates.length) {
+            // API 請求完成，開始下載階段
+
+            startDownloading();
+            return;
+        }
+        
+        var currentDate = monthDates[dateIndex];
+        var dailyOpt = dailyOptionsList[dateIndex];
+        
+        // 使用 daily_rank 但設置特殊標記，只請求 API 不下載
+        dailyOpt._apiOnlyMode = true;
+        
+        daily_rank(cookie, currentDate, dailyOpt, function(result) {
+            completedDays++;
+            // console.log(`[API請求] ${currentDate} 完成 (${completedDays}/${monthDates.length})`);
+            dateIndex++;
+            // 快速連續請求，因為只是 API 請求
+            setTimeout(requestNextDay, 10);
+        });
+    }
+    
+    // 第2階段：並行下載所有作品
+    function startDownloading() {
+        var downloadIndex = 0;
+        var downloadCompletedDays = 0;
+        
+        function downloadNextDay() {
+            if (downloadIndex >= monthDates.length) {
+                
+                if (onMonthComplete) {
+                    onMonthComplete({
+                        month: monthStr,
+                        total: totalMonthIllusts,
+                        completed: completedMonthIllusts,
+                        failed: failedMonthIllusts
+                    });
+                }
+                return;
+            }
+            
+            var currentDate = monthDates[downloadIndex];
+            var dailyOpt = dailyOptionsList[downloadIndex];
+            
+            // 移除 API only 標記，啟動下載
+            delete dailyOpt._apiOnlyMode;
+            
+            daily_rank(cookie, currentDate, dailyOpt, function(result) {
+                totalMonthIllusts += result.total;
+                completedMonthIllusts += result.completed;
+                failedMonthIllusts += result.failed;
+                downloadCompletedDays++;
+                
+                // console.log(`[下載] ${currentDate} 完成 (${downloadCompletedDays}/${monthDates.length})`);
+                
+                downloadIndex++;
+                // 下載之間保持間隔
+                var delay = (result.total === 0) ? 10 : options.interval;
+                setTimeout(downloadNextDay, delay);
+            });
+        }
+        
+        downloadNextDay();
+    }
+    
+    requestNextDay();
+}
+
+function startWithCookie(cookie) {
     if (cookie.indexOf("PHPSESSID") === -1) {
         console.log("警告：Cookie 可能未登入（缺少 PHPSESSID），若無法下載請改用瀏覽器 Cookie。");
     }
@@ -233,22 +334,19 @@ function startWithCookie(cookie) {
 
     var tagPrefix = "";
     if (options.tag) {
-        // 取得第一個標籤，並過濾掉資料夾不允許的特殊字元
         var firstTag = options.tag.split(",")[0].replace(/[\\/:*?"<>|]/g, "_");
         tagPrefix = firstTag + "_";
     }
     
-    // 處理 --year 參數：改為按月批次處理
+    // *** 極速處理年份：使用 processBatchFast ***
     if (yearArg) {
         if (!/^\d{4}$/.test(yearArg)) {
             console.log("输入的年份格式不正确，格式为 YYYY");
             return;
         }
         
-        var year = parseInt(yearArg, 10);
         options.baseDir = "./picture/" + tagPrefix + yearArg;
         
-        // 生成12個月份字串
         var months = [];
         for (var m = 1; m <= 12; m++) {
             var monthStr = String(m).padStart(2, "0");
@@ -264,47 +362,30 @@ function startWithCookie(cookie) {
             }
             
             var currentMonth = months[currentMonthIndex];
-            
             var monthDates = getDatesInMonth(currentMonth);
+            
             if (monthDates.length === 0) {
                 console.log(`月份 ${currentMonth} 格式錯誤，跳過`);
                 currentMonthIndex++;
-                setTimeout(processNextMonth, 10);
+                setTimeout(processNextMonth, 100);
                 return;
             }
             
-            var dayIndex = 0;
-            var monthDatesLength = monthDates.length;
+            var monthOptions = Object.assign({}, options);
+            monthOptions.baseDir = "./picture/" + tagPrefix + yearArg;
             
-            function processNextDay() {
-                if (dayIndex >= monthDatesLength) {
-                    currentMonthIndex++;
-                    setTimeout(processNextMonth, 10);
-                    return;
-                }
-                
-                var currentDate = monthDates[dayIndex];
-                // console.log(`處理日期 ${currentDate} (${dayIndex + 1}/${monthDatesLength})`);
-                
-                var dailyOptions = Object.assign({}, options);
-                
-                // 使用完成回調，確保當天下載完成後才處理下一天
-                daily_rank(cookie, currentDate, dailyOptions, function(result) {
-                    // result: { date, total, completed, failed }
-                    dayIndex++;
-                    // 如果沒有下載任何東西（全部跳過），立即處理下一天
-                    var delay = (result.total === 0) ? 10 : options.interval;
-                    setTimeout(processNextDay, delay);
-                });
-            }
-            
-            processNextDay();
+            // *** 使用極速批量處理 ***
+            daily_rank.processBatchFast(cookie, monthDates, monthOptions, function(result) {
+                currentMonthIndex++;
+                setTimeout(processNextMonth, 1000);
+            });
         }
         
         processNextMonth();
         return;
     }
 
+    // *** 極速處理月份：使用 processBatchFast ***
     if (monthArg) {
         var monthDates = getDatesInMonth(monthArg);
         if (monthDates.length === 0) {
@@ -313,38 +394,20 @@ function startWithCookie(cookie) {
         }
         
         options.baseDir = "./picture/" + tagPrefix + monthArg;
-        var i = 0;
-        var monthDatesLength = monthDates.length; // 快取長度
         
-        (function runNext() {
-            if (i >= monthDatesLength) {
-                // 清理記憶體
-                monthDates = null;
-                console.log("月份處理完成");
-                return;
-            }
-            var currentDate = monthDates[i]; // 快取當前日期
-            // console.log(`\n--- 開始處理第 ${i + 1}/${monthDatesLength} 天: ${currentDate} ---`);
-            
-            // 為每個日期創建獨立的 options 副本，避免 pageMap 被覆蓋
-            var dailyOptions = Object.assign({}, options);
-            
-            // 使用完成回調，確保當天下載完成後才處理下一天
-            daily_rank(cookie, currentDate, dailyOptions, function(result) {
-                i++;
-                // 如果沒有下載任何東西（全部跳過），立即處理下一天
-                var delay = (result.total === 0) ? 10 : options.interval;
-                setTimeout(runNext, delay);
-            });
-        })();
+        // *** 使用極速批量處理 ***
+        daily_rank.processBatchFast(cookie, monthDates, options, function(result) {
+            // console.log("\n月份處理完成");
+        });
+        
         return;
     }
 
+    // 單日下載
     if (date.length == 8) {
-        // 設置單日下載的資料夾名稱：第一個tag_日期
         options.baseDir = "./picture/" + tagPrefix + date;
         daily_rank(cookie, date, options, function(result) {
-            console.log(`單日下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
+            // console.log(`單日下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
         });
     } else {
         console.log("输入的日期格式不正确");
@@ -372,21 +435,19 @@ function loadAndConvertCookie(filePath) {
     try {
         let rawContent = fs.readFileSync(filePath, "utf-8").trim();
 
-        // 優化: 減少字串處理和臨時変數
         if (rawContent.startsWith("[")) {
-            // console.log("偵測到 JSON 格式 Cookie，正在自動轉換...");
             let cookieArray = JSON.parse(rawContent);
-            rawContent = null; // 清理原始內容
+            rawContent = null;
             
             let finalCookie = cookieArray
                 .map(item => `${item.name}=${item.value}`)
                 .join("; ");
             
-            cookieArray = null; // 清理陣列
+            cookieArray = null;
             return finalCookie;
         } else {
             let finalCookie = rawContent.replace(/[\r\n]/g, "");
-            rawContent = null; // 清理原始內容
+            rawContent = null;
             return finalCookie;
         }
     } catch (err) {
@@ -399,7 +460,6 @@ let cookiePath = "cookie/pixiv.txt";
 if (fs.existsSync(cookiePath)) {
     let convertedCookie = loadAndConvertCookie(cookiePath);
     if (convertedCookie) {
-        // console.log("Cookie 轉換成功！長度:", convertedCookie.length);
         cookie = convertedCookie;
         startWithCookie(cookie);
     }
