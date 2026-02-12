@@ -251,11 +251,11 @@ function processMonthBatch(cookie, monthDates, options, onMonthComplete) {
         return Object.assign({}, options);
     });
     
-    // 第1階段：批量請求所有日期的 API（不下載）
+
     var dateIndex = 0;
     function requestNextDay() {
         if (dateIndex >= monthDates.length) {
-            // API 請求完成，開始下載階段
+
 
             startDownloading();
             return;
@@ -264,19 +264,19 @@ function processMonthBatch(cookie, monthDates, options, onMonthComplete) {
         var currentDate = monthDates[dateIndex];
         var dailyOpt = dailyOptionsList[dateIndex];
         
-        // 使用 daily_rank 但設置特殊標記，只請求 API 不下載
+
         dailyOpt._apiOnlyMode = true;
         
         daily_rank(cookie, currentDate, dailyOpt, function(result) {
             completedDays++;
-            // console.log(`[API請求] ${currentDate} 完成 (${completedDays}/${monthDates.length})`);
+
             dateIndex++;
-            // 快速連續請求，因為只是 API 請求
+
             setTimeout(requestNextDay, 10);
         });
     }
     
-    // 第2階段：並行下載所有作品
+
     function startDownloading() {
         var downloadIndex = 0;
         var downloadCompletedDays = 0;
@@ -338,7 +338,7 @@ function startWithCookie(cookie) {
         tagPrefix = firstTag + "_";
     }
     
-    // *** 極速處理年份：使用 processBatchFast ***
+
     if (yearArg) {
         if (!/^\d{4}$/.test(yearArg)) {
             console.log("输入的年份格式不正确，格式为 YYYY");
@@ -357,7 +357,7 @@ function startWithCookie(cookie) {
         
         function processNextMonth() {
             if (currentMonthIndex >= months.length) {
-                console.log(`\n=== 年份 ${yearArg} 處理完成 ===`);
+                console.log(`-fin`);
                 return;
             }
             
@@ -374,7 +374,7 @@ function startWithCookie(cookie) {
             var monthOptions = Object.assign({}, options);
             monthOptions.baseDir = "./picture/" + tagPrefix + yearArg;
             
-            // *** 使用極速批量處理 ***
+     
             daily_rank.processBatchFast(cookie, monthDates, monthOptions, function(result) {
                 currentMonthIndex++;
                 setTimeout(processNextMonth, 1000);
@@ -385,7 +385,6 @@ function startWithCookie(cookie) {
         return;
     }
 
-    // *** 極速處理月份：使用 processBatchFast ***
     if (monthArg) {
         var monthDates = getDatesInMonth(monthArg);
         if (monthDates.length === 0) {
@@ -395,9 +394,8 @@ function startWithCookie(cookie) {
         
         options.baseDir = "./picture/" + tagPrefix + monthArg;
         
-        // *** 使用極速批量處理 ***
+        
         daily_rank.processBatchFast(cookie, monthDates, options, function(result) {
-            // console.log("\n月份處理完成");
         });
         
         return;
