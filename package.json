@@ -1,27 +1,26 @@
 {
-    "name": "pixiv",
-    "version": "1.0.0",
-    "description": "从p站保存图片",
-    "main": "index.js",
-    "scripts": {
-        "start": "node index.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/zhangsens/download-picture.git"
-    },
-    "author": "zhangs",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/zhangsens/download-picture/issues"
-    },
-    "homepage": "https://github.com/zhangsens/download-picture#readme",
-    "dependencies": {
-        "cheerio": "^0.22.0",
-        "express": "^4.15.2",
-        "jquery": "^3.2.1",
-        "querystring": "^0.2.0",
-        "request": "^2.81.0",
-        "superagent": "^3.5.2"
-    }
+  "name": "pixiv-downloader",
+  "version": "1.0.0",
+  "description": "從 Pixiv 獲取每日排行榜圖片並自動下載(支援多種篩選條件)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pixiv",
+    "downloader",
+    "image",
+    "ranking",
+    "crawler"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.88.2",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
 }

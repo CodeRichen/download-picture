@@ -4,7 +4,7 @@
 
 ### 安裝依賴
 ```bash
-npm install
+pnpm install
 ```
 
 ## Cookie 設定(僅需一次)
