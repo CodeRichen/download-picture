@@ -36,6 +36,7 @@ var options = {
     nowordBlock: null,
     tool: false,
     one: false,
+    skipMulti: false,
     downloadAll: false,
 };
 
@@ -152,6 +153,9 @@ args.forEach(function(arg) {
     }
     if (arg === "--one") {
         options.one = true;
+    }
+    if (arg === "--skip-multi" || arg === "--no-multi") {
+        options.skipMulti = true;
     }
     if (arg === "--all") {
         options.downloadAll = true;
@@ -358,7 +362,7 @@ function startWithCookie(cookie) {
         
         function processNextMonth() {
             if (currentMonthIndex >= months.length) {
-                console.log(`-fin`);
+                console.log(`-fin(y)`);
                 return;
             }
             
