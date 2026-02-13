@@ -4,6 +4,7 @@ var path = require("path");
 var request = require("request");
 
 var login = require("./lib/login.js");
+var daily_rank = require("./lib/daily_rank.js");
 var save = require("./lib/save.js");
 
 var imgHead = "https://i.pximg.net/img-original";
