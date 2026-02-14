@@ -34,7 +34,6 @@ var options = {
     tag: null,
     block: null,
     nowordBlock: null,
-    tool: false,
     association: [],
 };
 
@@ -146,9 +145,6 @@ args.forEach(function(arg) {
     }
 }
 
-    if (arg === "--tool") {
-        options.tool = true;
-    }
     if (arg.indexOf("--association=") === 0) {
         var associationValue = arg.split("=")[1];
         if (associationValue) {

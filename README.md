@@ -55,7 +55,7 @@ node index.js --year=2024
 
 #### 带筛选条件的下载
 ```bash
-node index.js --year=2024 --pages=10 --tool `
+node index.js --year=2024 --pages=10 `
 --tag=想要的角色1,想要的角色2 `
 --block=不想要的tag1,不想要的tag2 `
 --noword=不想要的word1,不想要的word2
