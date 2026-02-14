@@ -35,9 +35,7 @@ var options = {
     block: null,
     nowordBlock: null,
     tool: false,
-    one: false,
-    skipMulti: false,
-    downloadAll: false,
+    association: [],
 };
 
 var monthArg = null;
@@ -151,14 +149,13 @@ args.forEach(function(arg) {
     if (arg === "--tool") {
         options.tool = true;
     }
-    if (arg === "--one") {
-        options.one = true;
-    }
-    if (arg === "--skip-multi" || arg === "--no-multi") {
-        options.skipMulti = true;
-    }
-    if (arg === "--all") {
-        options.downloadAll = true;
+    if (arg.indexOf("--association=") === 0) {
+        var associationValue = arg.split("=")[1];
+        if (associationValue) {
+            options.association = associationValue.split(",").map(function(item) {
+                return item.trim();
+            });
+        }
     }
 });
 
