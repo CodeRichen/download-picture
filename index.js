@@ -1,13 +1,7 @@
-var https = require("https");
 var fs = require("fs");
-var path = require("path");
 var request = require("request");
 
-var login = require("./lib/login.js");
 var daily_rank = require("./lib/daily_rank.js");
-var save = require("./lib/save.js");
-
-var imgHead = "https://i.pximg.net/img-original";
 
 var pixiv_url = "https://www.pixiv.net/";
 
@@ -226,100 +220,6 @@ function getDatesInYear(y) {
     return dates;
 }
 
-/**
- * 新增：月度批量處理函數
- * 一次性請求整個月的所有 API，然後並行下載
- */
-function processMonthBatch(cookie, monthDates, options, onMonthComplete) {
-    if (!monthDates || monthDates.length === 0) {
-        if (onMonthComplete) onMonthComplete({ total: 0, completed: 0, failed: 0 });
-        return;
-    }
-    
-    var monthStr = monthDates[0].substring(0, 6); // 例如: "202501"
-
-    
-    var completedDays = 0;
-    var totalMonthIllusts = 0;
-    var completedMonthIllusts = 0;
-    var failedMonthIllusts = 0;
-    
-    // 為每個日期創建獨立的 options
-    var dailyOptionsList = monthDates.map(function(date) {
-        return Object.assign({}, options);
-    });
-    
-
-    var dateIndex = 0;
-    function requestNextDay() {
-        if (dateIndex >= monthDates.length) {
-
-
-            startDownloading();
-            return;
-        }
-        
-        var currentDate = monthDates[dateIndex];
-        var dailyOpt = dailyOptionsList[dateIndex];
-        
-
-        dailyOpt._apiOnlyMode = true;
-        
-        daily_rank(cookie, currentDate, dailyOpt, function(result) {
-            completedDays++;
-
-            dateIndex++;
-
-            setTimeout(requestNextDay, 10);
-        });
-    }
-    
-
-    function startDownloading() {
-        var downloadIndex = 0;
-        var downloadCompletedDays = 0;
-        
-        function downloadNextDay() {
-            if (downloadIndex >= monthDates.length) {
-                
-                if (onMonthComplete) {
-                    onMonthComplete({
-                        month: monthStr,
-                        total: totalMonthIllusts,
-                        completed: completedMonthIllusts,
-                        failed: failedMonthIllusts
-                    });
-                }
-                return;
-            }
-            
-            var currentDate = monthDates[downloadIndex];
-            var dailyOpt = dailyOptionsList[downloadIndex];
-            
-            // 移除 API only 標記，啟動下載
-            delete dailyOpt._apiOnlyMode;
-            
-            daily_rank(cookie, currentDate, dailyOpt, function(result) {
-                totalMonthIllusts += result.total;
-                completedMonthIllusts += result.completed;
-                failedMonthIllusts += result.failed;
-                downloadCompletedDays++;
-                
-                // console.log(`[下載] ${currentDate} 完成 (${downloadCompletedDays}/${monthDates.length})`);
-                
-                downloadIndex++;
-                // 下載之間保持間隔
-                var delay = (result.total === 0) ? 10 : options.interval;
-                setTimeout(downloadNextDay, delay);
-            });
-        }
-        
-        downloadNextDay();
-    }
-    
-    requestNextDay();
-}
-
 function startWithCookie(cookie) {
     if (cookie.indexOf("PHPSESSID") === -1) {
         console.log("警告：Cookie 可能未登入（缺少 PHPSESSID），若無法下載請改用瀏覽器 Cookie。");
@@ -335,7 +235,6 @@ function startWithCookie(cookie) {
         var firstTag = options.tag.split(",")[0].replace(/[\\/:*?"<>|]/g, "_");
         tagPrefix = firstTag + "_";
     }
-    
 
     if (yearArg) {
         if (!/^\d{4}$/.test(yearArg)) {
@@ -458,5 +357,9 @@ if (fs.existsSync(cookiePath)) {
     if (convertedCookie) {
         cookie = convertedCookie;
         startWithCookie(cookie);
+    } else {
+        console.error("Cookie 檔案格式錯誤或為空，請檢查 cookie/pixiv.txt 內容。");
     }
+} else {
+    console.error("找不到 cookie 檔案 (cookie/pixiv.txt)。請參考 README 說明建立 Cookie 檔案。");
 }
