@@ -264,7 +264,7 @@ function startWithCookie(cookie) {
             if (monthDates.length === 0) {
                 console.log(`月份 ${currentMonth} 格式錯誤，跳過`);
                 currentMonthIndex++;
-                setTimeout(processNextMonth, 100);
+                processNextMonth();
                 return;
             }
             
@@ -274,7 +274,7 @@ function startWithCookie(cookie) {
      
             daily_rank.processBatchFast(cookie, monthDates, monthOptions, function(result) {
                 currentMonthIndex++;
-                setTimeout(processNextMonth, 1000);
+                processNextMonth();
             });
         }
         

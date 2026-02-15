@@ -1,4 +1,4 @@
-# 从 Pixiv 获取每日排行榜图片并自动下载(支援多种筛选条件)
+# 从 Pixiv 获取排行榜图片(支援筛选条件)
 
 > 此程式之更新功能旨在觀察不同時代之插畫風格演進，請適量執行勿過度使用
 
@@ -141,6 +141,18 @@ picture/
 - 大多数情况是年龄限制内容，需要 Premium 帐户
 - 会自动跳过并在 JSON 档案中标记为`state: "fail"` 
 - 可以用ai编写一个额外的程式，读取json档案，将这些图片一次性的显示在网页上
+
+
+### 自動重試機制
+- **ESOCKETTIMEDOUT**: 30 秒內沒有收到伺服器回應（網路慢+下載多圖）
+- **aborted**: 連接被中止（網路不穩定、伺服器斷開）
+---
+- **重試次數**: 最多自動重試 3 次
+- **重試延遲**: 遞增延遲（2秒 → 4秒 → 6秒）
+- **超時時間**: 每個圖片下載 30 秒超時
+- **重試條件**: 只有網路相關錯誤會自動重試，HTTP 4xx/5xx 不會重試
+
+
 ### Rate Limiting 机制
 - **目前设定**: 每 50 个请求休息 8 秒钟
 - **请求计算**:
@@ -162,8 +174,8 @@ picture/
 ## Tag 管理系统
 
 ### tag.txt 档案功能
-每个下载资料夹都会产生 `tag.txt` 档案，记录：
-- 图片 ID 对应的所有标签
+每个下载资料夹都会产生 `_tags.txt` 档案，记录：
+- 图片 ID 对应的所有标签、排名、頁數
 - 在执行的过程当中，black里面的txt,图片档案，原因不明的复制到上一层资料夹当中，在执行结束后就会复原，不要去对他做搬移或删除
 - 如果因为网路遇到问题，图片下半部是灰色的，你先复制图片的名称，然后到txt里面去搜寻并将该行删除，再次执行程式就可以得到完整
 ### 处理不喜欢的图片
@@ -211,12 +223,15 @@ cd download-picture
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF
 node index.js --year=2025 --pages=10 --type=all --association=split `
 --tag=横顔,無表情,軽蔑,見下し,見下した目,冷たい目,ジト目,睨み,上から目線,罵倒顔,蔑み顔,ゴミを見る目,冷笑,嘲笑,皮肉顔,ドS,不機嫌,見せてんのよ,セルフスカート捲り `
---tag=更衣,着替え,着替え中,服を脱ぐ,服を着る,更衣室,ロッカールーム,横乳,女子中学生,JC `
 --block=天使 `
 --block=diaper,腹肉,ぽっちゃり,bbw,SSBBW,肥満化,腹ワイパー,thicc,異形進化,髪行類,多脚ヤンヨ,ショタ,たくしあげ,腹筋,おちんちん,ルカメイ,男の子,創作男子,青年,新作予告,新刊,ai,AI生成 `
 --noword=高達,北斗,ラオウ,孫悟空,ゴジラエヴォルヴ,機動戦士`
 2>&1 | ForEach-Object { 
     [Console]::WriteLine($_)
     $_ 
-} | Select-Object -Last 3 | Out-File -FilePath "L3.txt" -Encoding utf8
+}  | Select-Object -Last 3 | Out-File -FilePath "L3.txt" -Encoding utf8
+$endTime = "結束時間: $(Get-Date -Format 'yyyy/MM/dd HH:mm:ss')"
+Write-Host $endTime -ForegroundColor Cyan
+$endTime | Out-File -FilePath "L3.txt" -Append -Encoding utf8
+
 ```
