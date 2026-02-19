@@ -5,6 +5,9 @@ var daily_rank = require("./lib/daily_rank.js");
 
 var pixiv_url = "https://www.pixiv.net/";
 
+// 支援環境變數設定下載路徑，預設為 ./picture（保持原本行為）
+var BASE_DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || "./picture";
+
 var cookie;
 
 var args = process.argv.slice(2);
@@ -225,9 +228,9 @@ function startWithCookie(cookie) {
         console.log("警告：Cookie 可能未登入（缺少 PHPSESSID），若無法下載請改用瀏覽器 Cookie。");
     }
 
-    var picture_path = fs.existsSync("./picture");
+    var picture_path = fs.existsSync(BASE_DOWNLOAD_DIR);
     if (!picture_path) {
-        fs.mkdirSync("./picture");
+        fs.mkdirSync(BASE_DOWNLOAD_DIR, { recursive: true });
     }
 
     var tagPrefix = "";
@@ -242,7 +245,7 @@ function startWithCookie(cookie) {
             return;
         }
         
-        options.baseDir = "./picture/" + tagPrefix + yearArg;
+        options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + yearArg;
         
         var months = [];
         for (var m = 1; m <= 12; m++) {
@@ -269,7 +272,7 @@ function startWithCookie(cookie) {
             }
             
             var monthOptions = Object.assign({}, options);
-            monthOptions.baseDir = "./picture/" + tagPrefix + yearArg;
+            monthOptions.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + yearArg;
             
      
             daily_rank.processBatchFast(cookie, monthDates, monthOptions, function(result) {
@@ -289,7 +292,7 @@ function startWithCookie(cookie) {
             return;
         }
         
-        options.baseDir = "./picture/" + tagPrefix + monthArg;
+        options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + monthArg;
         
         
         daily_rank.processBatchFast(cookie, monthDates, options, function(result) {
@@ -300,7 +303,7 @@ function startWithCookie(cookie) {
 
     // 單日下載
     if (date.length == 8) {
-        options.baseDir = "./picture/" + tagPrefix + date;
+        options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + date;
         daily_rank(cookie, date, options, function(result) {
             // console.log(`單日下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
         });
