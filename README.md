@@ -25,13 +25,17 @@ pnpm install
 ```powershell
 cd download-picture
 ```
-2. 贴上下方的指令等待约2分钟，执行期间观察是否有输出如: `[20250726/1] 133074580 DL` 等信息
+2. 在powershell贴上下方的指令等待约2分钟，执行期间观察是否有输出如: `[20250726/1] 133074580 DL` 等信息
 ```powershell
 node index.js 20250726 --pages=6 --tag=女の子,オリジナル --block=スク水,地雷系 --block-group=[巨乳,自撮り]
 ```
 - 若使用[Doker](https://www.docker.com/get-started/) ( `docker build -t pixiv-dl .` )
 ```powershell
 docker run --rm -v "${PWD}/picture:/app/picture" pixiv-dl node index.js 20250726 --pages=6 --tag=女の子,オリジナル --block=スク水,地雷系  --block-group=[巨乳,自撮り]
+```
+- 若使用[release](https://github.com/CodeRichen/download-picture/releases/download/1.0/pixiv-downloader.exe) (進入執行檔所在資料夾)
+```powershell
+.\pixiv-downloader.exe 20250726 --pages=6 --tag=女の子,オリジナル --block=スク水,地雷系 --block-group=[巨乳,自撮り]
 ```
 3. 执行完成后进入"女の子_20250726"资料夹，检查里面是否有96个项目(67张單图片，27個多圖片)如果圖片少了，你的cookie可能是沒有登入的，沒辦法下載皮膚面積較大的圖片
 3. 再进入"_black"资料夹中检查是否有5张图片

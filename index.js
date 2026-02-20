@@ -1,12 +1,24 @@
 var fs = require("fs");
 var request = require("request");
+var path = require("path");
 
 var daily_rank = require("./lib/daily_rank.js");
 
 var pixiv_url = "https://www.pixiv.net/";
 
-// 支援環境變數設定下載路徑，預設為 ./picture（保持原本行為）
-var BASE_DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || "./picture";
+// 支援環境變數設定下載路徑
+// 如果是打包後的執行檔，下載到執行檔所在目錄的 picture 資料夾
+// 如果是用 node 執行，下載到當前目錄的 picture 資料夾
+var BASE_DOWNLOAD_DIR;
+if (process.env.DOWNLOAD_DIR) {
+    BASE_DOWNLOAD_DIR = process.env.DOWNLOAD_DIR;
+} else if (process.pkg) {
+    // 打包後的執行檔：使用執行檔所在目錄
+    BASE_DOWNLOAD_DIR = path.join(path.dirname(process.execPath), "picture");
+} else {
+    // 正常 node 執行：使用當前目錄
+    BASE_DOWNLOAD_DIR = "./picture";
+}
 
 var cookie;
 
@@ -224,8 +236,8 @@ function getDatesInYear(y) {
 }
 
 function startWithCookie(cookie) {
-    if (cookie.indexOf("PHPSESSID") === -1) {
-        console.log("警告：Cookie 可能未登入（缺少 PHPSESSID），若無法下載請改用瀏覽器 Cookie。");
+     if (cookie.indexOf("PHPSESSID") === -1) {
+        console.log("無 Cookie 或未登入（缺少 PHPSESSID）");
     }
 
     var picture_path = fs.existsSync(BASE_DOWNLOAD_DIR);
@@ -331,7 +343,13 @@ function startWithCookie(cookie) {
 
 function loadAndConvertCookie(filePath) {
     try {
-        let rawContent = fs.readFileSync(filePath, "utf-8").trim();
+        // 如果是打包後的執行檔，Cookie 路徑也要相對於執行檔目錄
+        var actualPath = filePath;
+        if (process.pkg && !path.isAbsolute(filePath)) {
+            actualPath = path.join(path.dirname(process.execPath), filePath);
+        }
+        
+        let rawContent = fs.readFileSync(actualPath, "utf-8").trim();
 
         if (rawContent.startsWith("[")) {
             let cookieArray = JSON.parse(rawContent);
@@ -355,14 +373,17 @@ function loadAndConvertCookie(filePath) {
 }
 
 let cookiePath = "cookie/pixiv.txt";
+cookie = "";
+
 if (fs.existsSync(cookiePath)) {
     let convertedCookie = loadAndConvertCookie(cookiePath);
-    if (convertedCookie) {
+    if (convertedCookie && convertedCookie.trim() !== "" && !convertedCookie.startsWith("#")) {
         cookie = convertedCookie;
-        startWithCookie(cookie);
     } else {
-        console.error("Cookie 檔案格式錯誤或為空，請檢查 cookie/pixiv.txt 內容。");
+        cookie = "";
     }
 } else {
-    console.error("找不到 cookie 檔案 (cookie/pixiv.txt)。請參考 README 說明建立 Cookie 檔案。");
+    cookie = "";
 }
+
+startWithCookie(cookie); 
