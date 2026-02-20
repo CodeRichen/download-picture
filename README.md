@@ -33,12 +33,12 @@ node index.js 20250726 --pages=6 --tag=女の子,オリジナル --block=スク�
 ```powershell
 docker run --rm -v "${PWD}/picture:/app/picture" pixiv-dl node index.js 20250726 --pages=6 --tag=女の子,オリジナル --block=スク水,地雷系  --block-group=[巨乳,自撮り]
 ```
-- 若使用[release](https://github.com/CodeRichen/download-picture/releases/download/1.0/pixiv-downloader.exe) (進入執行檔所在資料夾)
+- 若使用[release](https://github.com/CodeRichen/download-picture/releases/download/1.1/pixiv-downloader.exe) (進入執行檔所在資料夾)
 ```powershell
 .\pixiv-downloader.exe 20250726 --pages=6 --tag=女の子,オリジナル --block=スク水,地雷系 --block-group=[巨乳,自撮り]
 ```
-3. 执行完成后进入"女の子_20250726"资料夹，检查里面是否有96个项目(67张單图片，27個多圖片)如果圖片少了，你的cookie可能是沒有登入的，沒辦法下載皮膚面積較大的圖片
-3. 再进入"_black"资料夹中检查是否有5张图片
+3. 执行完成后进入"女の子_20250726"開頭的资料夹，检查里面是否有96个项目(67张單图片，27個多圖片)如果圖片少了，你的cookie可能是沒有登入的，沒辦法下載皮膚面積較大的圖片
+3. 再进入"_black"開頭的资料夹中检查是否有5张图片
 - 133098384.png
 - 133148911.png
 - 133094526.png
@@ -126,10 +126,10 @@ node index.js --year=2024 --pages=10 `
 ### 资料夹结构
 ```
 picture/
-├── [第一个tag]_YYYYMMDD/     # 单日下载
-├── [第一个tag]_YYYYMM/       # 整月下载
-├── [第一个tag]_YYYY/         # 整年下载
-└── black/                    # 被筛选掉的图片
+├── [第一个tag]_YYYYMMDD(檔案數量)/     # 单日下载
+├── [第一个tag]_YYYYMM(檔案數量)/       # 整月下载
+├── [第一个tag]_YYYY(檔案數量)/         # 整年下载
+└── _black(檔案數量)/                   # 被筛选掉的图片
 ```
 
 ### 命名规则

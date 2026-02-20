@@ -196,8 +196,52 @@ function renameAllFoldersRecursively(rootPath) {
     
     processDir(rootPath);
     
-
+    if (renamedCount > 0) {
+        // console.log(`\n[完成] 已重命名 ${renamedCount} 個子資料夾`);
+    }
+    
+    // 註冊退出時處理主資料夾重命名
+    registerExitRename(rootPath);
 }
+
+// 待重命名的主資料夾列表
+var pendingRenames = [];
+
+function registerExitRename(dirPath) {
+    if (!pendingRenames.includes(dirPath)) {
+        pendingRenames.push(dirPath);
+    }
+}
+
+// 在程式退出前處理主資料夾重命名
+process.on('beforeExit', function() {
+    pendingRenames.forEach(function(rootPath) {
+        try {
+            var parentDir = path.dirname(rootPath);
+            var folderName = path.basename(rootPath);
+            
+            // 檢查資料夾是否還存在（可能已被重命名）
+            if (!fs.existsSync(rootPath)) {
+                return;
+            }
+            
+            var stats = countFilesInDirectory(rootPath);
+            var totalFileCount = stats.files;
+            var baseName = folderName.replace(/\(\d+\)$/, '');
+            var newFolderName = `${baseName}(${totalFileCount})`;
+            
+            if (folderName !== newFolderName) {
+                var newRootPath = path.join(parentDir, newFolderName);
+                if (!fs.existsSync(newRootPath)) {
+                    fs.renameSync(rootPath, newRootPath);
+                    // console.log(`[主資料夾] ${folderName} → ${newFolderName}`);
+                }
+            }
+        } catch (err) {
+            // 靜默失敗，不影響程式退出
+        }
+    });
+});
 
 // 支援環境變數設定下載路徑
 // 如果是打包後的執行檔，下載到執行檔所在目錄的 picture 資料夾
