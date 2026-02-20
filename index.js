@@ -6,6 +6,201 @@ var daily_rank = require("./lib/daily_rank.js");
 
 var pixiv_url = "https://www.pixiv.net/";
 
+// 統計資料夾中的檔案數量
+function countFilesInDirectory(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        return { files: 0, folders: 0, multiImageFolders: 0 };
+    }
+    
+    var stats = { files: 0, folders: 0, multiImageFolders: 0 };
+    var items = fs.readdirSync(dirPath);
+    
+    items.forEach(function(item) {
+        var itemPath = path.join(dirPath, item);
+        try {
+            var stat = fs.statSync(itemPath);
+            if (stat.isDirectory()) {
+                stats.folders++;
+                // 檢查是否為多圖資料夾（格式: ID(count)）
+                if (/^\d+\(\d+\)$/.test(item)) {
+                    stats.multiImageFolders++;
+                }
+                // 遞迴統計資料夾內的檔案
+                var subStats = countFilesInDirectory(itemPath);
+                stats.files += subStats.files;
+            } else if (stat.isFile()) {
+                stats.files++;
+            }
+        } catch (err) {
+            // 忽略錯誤（如權限問題）
+        }
+    });
+    
+    return stats;
+}
+
+// 移除資料夾名稱中的數量後綴
+function removeFolderCountSuffix(baseDir) {
+    var parentDir = path.dirname(baseDir);
+    var folderName = path.basename(baseDir);
+    
+    // 如果資料夾本身存在，遞迴處理其子資料夾
+    if (fs.existsSync(baseDir)) {
+        removeAllCountSuffixesInDir(baseDir);
+        return baseDir;
+    }
+    
+    // 檢查是否有帶數量後綴的版本
+    if (!fs.existsSync(parentDir)) {
+        return baseDir;
+    }
+    
+    var items = fs.readdirSync(parentDir);
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        // 檢查是否為 "baseName(數字)" 格式
+        var pattern = new RegExp(`^${folderName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\(\\d+\\)$`);
+        if (pattern.test(item)) {
+            var fullPath = path.join(parentDir, item);
+            if (fs.statSync(fullPath).isDirectory()) {
+                // 移除數量後綴，方便下載使用
+                var cleanPath = path.join(parentDir, folderName);
+                try {
+                    fs.renameSync(fullPath, cleanPath);
+                    // 遞迴處理子資料夾
+                    removeAllCountSuffixesInDir(cleanPath);
+                    return cleanPath;
+                } catch (err) {
+                    return fullPath;
+                }
+            }
+        }
+    }
+    
+    return baseDir;
+}
+
+// 遞迴移除資料夾內所有子資料夾的數量後綴
+function removeAllCountSuffixesInDir(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        return;
+    }
+    
+    try {
+        var items = fs.readdirSync(dirPath);
+        items.forEach(function(item) {
+            var itemPath = path.join(dirPath, item);
+            try {
+                if (fs.statSync(itemPath).isDirectory()) {
+                    // 檢查是否有數量後綴
+                    var baseName = item.replace(/\(\d+\)$/, '');
+                    if (baseName !== item) {
+                        // 有後綴，移除它
+                        var newPath = path.join(dirPath, baseName);
+                        if (!fs.existsSync(newPath)) {
+                            fs.renameSync(itemPath, newPath);
+                            itemPath = newPath;
+                        }
+                    }
+                    // 遞迴處理子資料夾
+                    removeAllCountSuffixesInDir(itemPath);
+                }
+            } catch (err) {
+                // 忽略錯誤
+            }
+        });
+    } catch (err) {
+        // 忽略錯誤
+    }
+}
+
+// 只統計當前資料夾的檔案數（不遞迴）
+function countFilesInFolder(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        return 0;
+    }
+    
+    try {
+        var items = fs.readdirSync(dirPath);
+        var count = 0;
+        items.forEach(function(item) {
+            var itemPath = path.join(dirPath, item);
+            if (fs.statSync(itemPath).isFile()) {
+                count++;
+            }
+        });
+        return count;
+    } catch (err) {
+        return 0;
+    }
+}
+
+// 批量重命名所有子資料夾（包括 _black 等特殊資料夾）
+function renameAllFoldersRecursively(rootPath) {
+    if (!fs.existsSync(rootPath)) {
+        return;
+    }
+    
+    var renamedCount = 0;
+    
+    // 使用遞迴從最深層開始處理
+    function processDir(dirPath) {
+        var items;
+        try {
+            items = fs.readdirSync(dirPath);
+        } catch (err) {
+            return;
+        }
+        
+        var subDirs = [];
+        
+        // 先收集所有子資料夾
+        items.forEach(function(item) {
+            var itemPath = path.join(dirPath, item);
+            try {
+                if (fs.statSync(itemPath).isDirectory()) {
+                    subDirs.push(itemPath);
+                }
+            } catch (err) {
+                // 忽略錯誤
+            }
+        });
+        
+        // 遞迴處理子資料夾
+        subDirs.forEach(function(subDir) {
+            processDir(subDir);
+        });
+        
+        // 處理當前資料夾的所有子資料夾（重命名）
+        subDirs.forEach(function(itemPath) {
+            var item = path.basename(itemPath);
+            try {
+                if (fs.existsSync(itemPath) && fs.statSync(itemPath).isDirectory()) {
+                    var fileCount = countFilesInFolder(itemPath);
+                    var baseName = item.replace(/\(\d+\)$/, '');
+                    var newName = `${baseName}(${fileCount})`;
+                    
+                    if (item !== newName) {
+                        var newPath = path.join(dirPath, newName);
+                        if (!fs.existsSync(newPath)) {
+                            fs.renameSync(itemPath, newPath);
+                            renamedCount++;
+                        }
+                    }
+                }
+            } catch (err) {
+                // 忽略錯誤
+            }
+        });
+    }
+    
+    processDir(rootPath);
+    
+    if (renamedCount > 0) {
+        console.log(`\n[完成] 已重命名 ${renamedCount} 個資料夾`);
+    }
+}
+
 // 支援環境變數設定下載路徑
 // 如果是打包後的執行檔，下載到執行檔所在目錄的 picture 資料夾
 // 如果是用 node 執行，下載到當前目錄的 picture 資料夾
@@ -258,6 +453,7 @@ function startWithCookie(cookie) {
         }
         
         options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + yearArg;
+        options.baseDir = removeFolderCountSuffix(options.baseDir);
         
         var months = [];
         for (var m = 1; m <= 12; m++) {
@@ -269,7 +465,9 @@ function startWithCookie(cookie) {
         
         function processNextMonth() {
             if (currentMonthIndex >= months.length) {
-                console.log(`-fin(y)`);
+                console.log(`\n年度下載完成`);
+                // 批量重命名所有資料夾
+                renameAllFoldersRecursively(options.baseDir);
                 return;
             }
             
@@ -285,6 +483,7 @@ function startWithCookie(cookie) {
             
             var monthOptions = Object.assign({}, options);
             monthOptions.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + yearArg;
+            monthOptions.baseDir = removeFolderCountSuffix(monthOptions.baseDir);
             
      
             daily_rank.processBatchFast(cookie, monthDates, monthOptions, function(result) {
@@ -305,9 +504,13 @@ function startWithCookie(cookie) {
         }
         
         options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + monthArg;
+        options.baseDir = removeFolderCountSuffix(options.baseDir);
         
         
         daily_rank.processBatchFast(cookie, monthDates, options, function(result) {
+            console.log(`\n月份下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
+            // 批量重命名所有資料夾
+            renameAllFoldersRecursively(options.baseDir);
         });
         
         return;
@@ -316,8 +519,11 @@ function startWithCookie(cookie) {
     // 單日下載
     if (date.length == 8) {
         options.baseDir = BASE_DOWNLOAD_DIR + "/" + tagPrefix + date;
+        options.baseDir = removeFolderCountSuffix(options.baseDir);
         daily_rank(cookie, date, options, function(result) {
-            // console.log(`單日下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
+            console.log(`\n下載完成: 總計 ${result.total}, 成功 ${result.completed}, 失敗 ${result.failed}`);
+            // 批量重命名所有資料夾
+            renameAllFoldersRecursively(options.baseDir);
         });
     } else {
         console.log("输入的日期格式不正确");
