@@ -278,9 +278,11 @@ var options = {
     baseDir: null,
     interval: 10,
     tag: null,
+    idRange: null,
     block: null,
     nowordBlock: null,
     association: [],
+    folder: null,
 };
 
 var monthArg = null;
@@ -316,6 +318,10 @@ args.forEach(function(arg) {
     if (arg.indexOf("--interval=") === 0) {
         var itv = parseInt(arg.split("=")[1], 10);
         options.interval = isNaN(itv) || itv < 0 ? 1000 : itv;
+    }
+    if (arg.indexOf("--folder=") === 0) {
+        options.folder = arg.split("=")[1];
+        console.log(`[DEBUG] 解析到 folder 參數: ${options.folder}`);
     }
     if (arg.indexOf("--tag=") === 0) {
         var newTag = arg.split("=")[1].replace(/\s/g, "");
@@ -391,6 +397,21 @@ args.forEach(function(arg) {
     }
 }
 
+    if (arg.indexOf("--id-range=") === 0) {
+        var rangeValue = arg.split("=")[1];
+        var rangeParts = rangeValue.split("-");
+        if (rangeParts.length === 2) {
+            var startId = parseInt(rangeParts[0], 10);
+            var endId = parseInt(rangeParts[1], 10);
+            if (!isNaN(startId) && !isNaN(endId) && endId >= startId) {
+                options.idRange = { start: startId, end: endId };
+            } else {
+                console.log("[錯誤] ID 範圍格式不正確，格式: --id-range=125000000-125001000");
+            }
+        } else {
+            console.log("[錯誤] ID 範圍格式不正確，格式: --id-range=125000000-125001000");
+        }
+    }
     if (arg.indexOf("--association=") === 0) {
         var associationValue = arg.split("=")[1];
         if (associationValue) {
@@ -402,6 +423,10 @@ args.forEach(function(arg) {
 });
 
 // 顯示篩選標籤彙總
+if (options.folder) {
+    console.log(`--folder: ${options.folder}`);
+}
+
 if (options.tag) {
     var tagCount = options.tag.split(",").length;
     console.log(`--tag: ${tagCount} `);
@@ -566,6 +591,20 @@ function startWithCookie(cookie) {
         });
     } else {
         console.log("输入的日期格式不正确");
+    }
+
+    // ID 範圍下載模式
+    if (options.idRange) {
+        var downloadOptions = Object.assign({}, options);
+        downloadOptions.baseDir = BASE_DOWNLOAD_DIR;
+        
+        daily_rank.downloadByIdRange(
+            options.idRange.start,
+            options.idRange.end,
+            cookie,
+            downloadOptions
+        );
+        return;
     }
 
     // test cookie 
