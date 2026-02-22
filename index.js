@@ -259,6 +259,62 @@ if (process.env.DOWNLOAD_DIR) {
 
 var cookie;
 
+// 顯示幫助信息
+function showHelp() {
+    console.log(`\n=== Pixiv 圖片下載器 ===\n`);
+    console.log(`用法: node index.js [日期/選項]\n`);
+    
+    console.log(`基本下載模式:`);
+    console.log(`  node index.js 20240315                    # 下載指定日期`);
+    console.log(`  node index.js --month=202403              # 下載整月`);
+    console.log(`  node index.js --year=2024                 # 下載整年`);
+    console.log(`  node index.js --id=141449024              # 下載單個作品`);
+    console.log(`  node index.js --id-range=125000-125100   # 下載ID範圍\n`);
+    
+    console.log(`篩選參數:`);
+    console.log(`  --tag=標籤1,標籤2         # 必須包含的標籤 (OR邏輯)`);
+    console.log(`  --block=標籤1,標籤2       # 排除的標籤`);
+    console.log(`  --noword=關鍵字1,關鍵字2   # 排除含特定關鍵字的作品`);
+    console.log(`  --folder=資料夾名稱        # 自訂資料夾名稱`);
+    console.log(`  --max=數量               # 最大下載數量`);
+    
+    console.log(`  --orientation=方向        # 圖片方向篩選:`);
+    console.log(`    landscape               #   橫向`);
+    console.log(`    portrait                #   直向`);
+    console.log(`    desktop                 #   桌面比例`);
+    console.log(`    nomanga                 #   排除長條漫畫`);
+    
+    console.log(`  --type=類型              # 作品類型:`);
+    console.log(`    illust                  #   插畫`);
+    console.log(`    manga                   #   漫畫`);
+    console.log(`    ugoira                  #   動圖`);
+    console.log(`    all                     #   全部類型\n`);
+    
+    console.log(`高級篩選:`);
+    console.log(`  --block-group="[標籤A,標籤B]"              # AND群組黑名單`);
+    console.log(`  --block-group="[標籤A,標籤B)"              # 條件式黑名單\n`);
+    
+    console.log(`其他選項:`);
+    console.log(`  --pages=頁數             # 排行榜頁數 (每頁約50張)`);
+    console.log(`  --mode=daily/weekly/monthly # 排行榜類型`);
+    console.log(`  --content=illust/all     # 內容類型`);
+    console.log(`  --interval=毫秒          # 請求間隔時間`);
+    console.log(`  --debug, -d              # 啟用詳細錯誤輸出模式`);
+    console.log(`  --help, -h               # 顯示此幫助信息\n`);
+    
+    console.log(`範例:`);
+    console.log(`  # 下載初音未來橫向插畫，最多50張`);
+    console.log(`  node index.js --id-range=125000000-125001000 --tag=初音ミク --orientation=landscape --max=50`);
+    
+    console.log(`  # 下載女孩子原創作品，排除R-18`);
+    console.log(`  node index.js 20240315 --tag=女の子,オリジナル --block=R-18 --folder=girls`);
+    
+    console.log(`  # 下載單個作品並啟用詳細錯誤輸出`);
+    console.log(`  node index.js --id=141449024 --folder=single --debug\n`);
+}
+
+var cookie;
+
 var args = process.argv.slice(2);
 var _date = args.find(function(a) { return /^\d{8}$/.test(a); });
 var today = new Date();
@@ -279,8 +335,9 @@ var options = {
     interval: 10,
     tag: null,
     idRange: null,
-    block: null,
-    nowordBlock: null,
+    singleId: null,
+    debug: false,
+    block: null,    debug: false,    nowordBlock: null,
     association: [],
     folder: null,
 };
@@ -397,6 +454,23 @@ args.forEach(function(arg) {
     }
 }
 
+    if (arg === "--debug" || arg === "-d") {
+        options.debug = true;
+        console.log("[DEBUG] 已啟用詳細錯誤輸出模式");
+    }
+    if (arg.indexOf("--id=") === 0) {
+        var singleId = parseInt(arg.split("=")[1], 10);
+        if (!isNaN(singleId) && singleId > 0) {
+            options.singleId = singleId;
+        } else {
+            console.log("[錯誤] ID 格式不正確，格式: --id=141449024");
+            process.exit(1);
+        }
+    }
+    if (arg === "--help" || arg === "-h") {
+        showHelp();
+        process.exit(0);
+    }
     if (arg.indexOf("--id-range=") === 0) {
         var rangeValue = arg.split("=")[1];
         var rangeParts = rangeValue.split("-");
@@ -505,6 +579,31 @@ function startWithCookie(cookie) {
     var picture_path = fs.existsSync(BASE_DOWNLOAD_DIR);
     if (!picture_path) {
         fs.mkdirSync(BASE_DOWNLOAD_DIR, { recursive: true });
+    }
+
+    // 單個 ID 下載模式
+    if (options.singleId) {
+        var downloadOptions = Object.assign({}, options);
+        downloadOptions.baseDir = BASE_DOWNLOAD_DIR;
+        
+        daily_rank.downloadSingleId(
+            options.singleId,
+            cookie,
+            downloadOptions,
+            function(result) {
+                if (result.error) {
+                    if (options.debug) {
+                        console.log(`[DEBUG] 詳細錯誤信息: ${result.error}`);
+                        if (result.stack) {
+                            console.log(`[DEBUG] 錯誤堆疊:\n${result.stack}`);
+                        }
+                    }
+                    console.log(`[錯誤] ${result.error}`);
+                    process.exit(1);
+                }
+            }
+        );
+        return;
     }
 
     var tagPrefix = "";
@@ -668,6 +767,46 @@ if (fs.existsSync(cookiePath)) {
     }
 } else {
     cookie = "";
+}
+
+// 全域錯誤處理 - 根據 debug 模式決定錯誤輸出詳細程度
+if (options.debug) {
+    process.on('uncaughtException', function(err) {
+        console.log('\n[DEBUG - 嚴重錯誤] 程式遇到未處理的異常:');
+        console.log('錯誤類型:', err.name || 'Unknown');
+        console.log('錯誤訊息:', err.message || 'No message available');
+        if (err.stack) {
+            console.log('錯誤堆疊:\n', err.stack);
+        }
+        console.log('錯誤代碼:', err.code || 'N/A');
+        console.log('錯誤來源:', err.fileName || 'Unknown');
+        console.log('錯誤行號:', err.lineNumber || 'Unknown');
+        console.log('\n請檢查以上詳細錯誤信息並報告此問題。');
+        process.exit(1);
+    });
+
+    process.on('unhandledRejection', function(reason, promise) {
+        console.log('\n[DEBUG - 未處理的Promise拒絕] 於:', promise);
+        console.log('原因:', reason);
+        if (reason && typeof reason === 'object') {
+            console.log('詳細信息:', JSON.stringify(reason, null, 2));
+            if (reason.stack) {
+                console.log('錯誤堆疊:\n', reason.stack);
+            }
+        }
+    });
+} else {
+    // 簡化版錯誤處理
+    process.on('uncaughtException', function(err) {
+        console.log(`\n[錯誤] ${err.message || '程式發生未知錯誤'}`);
+        console.log('提示：使用 --debug 參數可查看詳細錯誤信息');
+        process.exit(1);
+    });
+
+    process.on('unhandledRejection', function(reason, promise) {
+        console.log(`\n[錯誤] ${typeof reason === 'string' ? reason : (reason.message || '未處理的Promise錯誤')}`);
+        console.log('提示：使用 --debug 參數可查看詳細錯誤信息');
+    });
 }
 
 startWithCookie(cookie); 
